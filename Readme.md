@@ -1,0 +1,1 @@
+docker run -d -p 3307:3306 -e MYSQL_ROOT_PASSWORD=Raju@4789 -e MYSQL_DATABASE=cricket_tournament -e MYSQL_USER=cwc_admin -e MYSQL_PASSWORD=cwc@2023 mysql:5.7
