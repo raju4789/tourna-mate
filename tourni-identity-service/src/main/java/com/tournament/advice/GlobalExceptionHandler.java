@@ -1,26 +1,27 @@
-package com.tournament.pointstabletracker.advice;
+package com.tournament.advice;
 
-import com.tournament.pointstabletracker.dto.CommonApiResponse;
-import com.tournament.pointstabletracker.dto.ErrorDetails;
-import com.tournament.pointstabletracker.exceptions.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import com.tournament.dto.common.CommonApiResponse;
+import com.tournament.dto.common.ErrorDetails;
+import com.tournament.exceptions.InvalidRequestException;
+import com.tournament.exceptions.RecordAlreadyExistsException;
+import com.tournament.exceptions.RecordNotFoundException;
+import com.tournament.exceptions.UserUnAuthorizedException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.validation.FieldError;
-
 
 import java.util.List;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
-
-    private static final Logger logger = (Logger) LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<CommonApiResponse<String>> handleInvalidRequestException(InvalidRequestException ex) {
@@ -47,6 +48,27 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(commonApiResponse);
     }
 
+    @ExceptionHandler(UserUnAuthorizedException.class)
+    public ResponseEntity<CommonApiResponse<String>> handleUnAuthorisedException(UserUnAuthorizedException ex) {
+        ErrorDetails errorDetails = ErrorDetails.builder().errorCode(HttpStatus.FORBIDDEN.value()).errorMessage(ex.getMessage()).build();
+        CommonApiResponse<String> commonApiResponse = CommonApiResponse.<String>builder().errorDetails(errorDetails).build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(commonApiResponse);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<CommonApiResponse<String>> handleAccessDeniedException(AccessDeniedException ex) {
+        ErrorDetails errorDetails = ErrorDetails.builder().errorCode(HttpStatus.FORBIDDEN.value()).errorMessage(ex.getMessage()).build();
+        CommonApiResponse<String> commonApiResponse = CommonApiResponse.<String>builder().errorDetails(errorDetails).build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(commonApiResponse);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<CommonApiResponse<String>> handleUnAuthenticatedException(AuthenticationException ex) {
+        ErrorDetails errorDetails = ErrorDetails.builder().errorCode(HttpStatus.UNAUTHORIZED.value()).errorMessage(ex.getMessage()).build();
+        CommonApiResponse<String> commonApiResponse = CommonApiResponse.<String>builder().errorDetails(errorDetails).build();
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(commonApiResponse);
+    }
+
     @ExceptionHandler(RecordAlreadyExistsException.class)
     public ResponseEntity<CommonApiResponse<String>> handleRecordAlreadyExistsException(RecordAlreadyExistsException ex) {
         ErrorDetails errorDetails = ErrorDetails.builder().errorCode(HttpStatus.BAD_REQUEST.value()).errorMessage(ex.getMessage()).build();
@@ -56,7 +78,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<CommonApiResponse<String>> handleRuntimeException(RuntimeException ex) {
-        logger.error("RuntimeException occurred: ", ex);
+        log.error("RuntimeException occurred: ", ex);
         ErrorDetails errorDetails = ErrorDetails.builder().errorCode(HttpStatus.INTERNAL_SERVER_ERROR.value()).errorMessage(ex.getMessage()).build();
         CommonApiResponse<String> commonApiResponse = CommonApiResponse.<String>builder().errorDetails(errorDetails).build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonApiResponse);
@@ -64,7 +86,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonApiResponse<String>> handleDefaultException(Exception ex) {
-        logger.error("Exception occurred: ", ex);
+        log.error("Exception occurred: ", ex);
         ErrorDetails errorDetails = ErrorDetails.builder().errorCode(HttpStatus.INTERNAL_SERVER_ERROR.value()).errorMessage(ex.getMessage()).build();
         CommonApiResponse<String> commonApiResponse = CommonApiResponse.<String>builder().errorDetails(errorDetails).build();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(commonApiResponse);

@@ -1,6 +1,6 @@
 spring:
   application:
-      name: points-table-tracker
+    name: tourni-identity-service
   format:
     style: google
   jpa:
@@ -18,6 +18,12 @@ spring:
 
 server:
   port: 0
+
+jwt:
+  secret: 6a8e1e15d6b7892e8e6f13d7bc54b6c07d398c57923c8b2044973203e7023704
+  expirationTime: 86400000
+  tokenPrefix: 'Bearer '
+  authorizationHeaderString: Authorization
 
 eureka:
   client:

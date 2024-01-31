@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
@@ -25,7 +24,6 @@ import java.util.List;
 public class PointsTableTrackerController {
 
     private final PointsTableTrackerService pointsTableTrackerService;
-    private final WebClient.Builder webClientBuilder;
 
     @Operation(
             description = "Get endpoint to retrieve points table by tournament id",

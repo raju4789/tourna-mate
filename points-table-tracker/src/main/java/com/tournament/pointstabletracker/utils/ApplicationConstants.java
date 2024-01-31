@@ -15,7 +15,4 @@ public class ApplicationConstants {
         ADMIN, USER
     }
 
-    public enum AppUserPermissions {
-        CREATE, READ, UPDATE, DELETE
-    }
 }

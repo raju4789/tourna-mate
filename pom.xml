@@ -19,6 +19,7 @@
         <module>tourni-ai</module>
         <module>tourni-discovery-service</module>
         <module>tourni-gateway</module>
+        <module>tourni-identity-service</module>
     </modules>
 
     <properties>

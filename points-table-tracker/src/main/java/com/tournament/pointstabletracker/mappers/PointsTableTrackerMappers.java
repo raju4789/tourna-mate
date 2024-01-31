@@ -6,14 +6,10 @@ import com.tournament.pointstabletracker.dto.PointsTableDTO;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.tournament.pointstabletracker.dto.auth.AppRegistrationRequest;
 import com.tournament.pointstabletracker.entity.app.MatchResult;
 import com.tournament.pointstabletracker.entity.app.PointsTable;
-import com.tournament.pointstabletracker.entity.user.AppUser;
-import com.tournament.pointstabletracker.utils.ApplicationConstants.AppUserRole;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,7 +17,6 @@ import org.springframework.stereotype.Component;
 public class PointsTableTrackerMappers {
 
     private final ModelMapper modelMapper;
-    private final PasswordEncoder passwordEncoder;
 
     public MatchResult mapMatchResultRequestDTOToMatchResult(AddMatchResultRequest addMatchResultRequest) {
         MatchResult matchResult = modelMapper.map(addMatchResultRequest, MatchResult.class);
@@ -37,13 +32,4 @@ public class PointsTableTrackerMappers {
         return pointsTableDTO;
     }
 
-    public AppUser mapAppRegistrationRequestDTOToAppUser(AppRegistrationRequest appRegistrationRequest) {
-        AppUser appUser = modelMapper.map(appRegistrationRequest, AppUser.class);
-        appUser.setPassword(passwordEncoder.encode(appRegistrationRequest.getPassword()));
-        appUser.setRole(AppUserRole.USER);
-        appUser.setRecordCreatedBy(UUID.randomUUID().toString());
-        appUser.setRecordCreatedDate(LocalDateTime.now());
-        appUser.setActive(true);
-        return appUser;
-    }
 }
