@@ -1,9 +1,7 @@
 package com.tournament.feign;
 
 import com.tournament.dto.common.CommonApiResponse;
-import com.tournament.dto.security.AppAuthenticationResponse;
-import com.tournament.dto.security.AppRegistrationRequest;
-import com.tournament.dto.security.AppTokenValidationResponse;
+import com.tournament.dto.security.*;
 import jakarta.validation.Valid;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
@@ -13,14 +11,18 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "tourni-identity-service")
-public interface TourniRouteAuthenticationService {
+public interface TourniFeignClient {
 
-    @PostMapping("/api/v1/auth/register")
+    @PostMapping("/register")
     ResponseEntity<CommonApiResponse<AppAuthenticationResponse>> register(@Valid @RequestBody AppRegistrationRequest appUserRegistrationRequest);
 
-    @GetMapping("/api/v1/auth/validateToken?token={token}")
-    ResponseEntity<CommonApiResponse<AppTokenValidationResponse>> validateToken(@RequestParam String token);
+    @PostMapping("/authenticate")
+    ResponseEntity<CommonApiResponse<AppAuthenticationResponse>> authenticate(@Valid @RequestBody AppAuthenticationRequest appAuthenticationRequest);
 
     @GetMapping("/generateToken?username={username}")
     ResponseEntity<CommonApiResponse<AppAuthenticationResponse>> generateToken(@RequestParam String username);
+
+    @PostMapping("/validateToken")
+    ResponseEntity<CommonApiResponse<AppTokenValidationResponse>> validateToken(@Valid @RequestBody AppTokenValidationRequest appTokenValidationRequest);
+
 }

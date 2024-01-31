@@ -1,6 +1,7 @@
 package com.tournament.service.auth;
 
 
+import com.tournament.dto.security.AppAuthenticationRequest;
 import com.tournament.dto.security.AppTokenValidationResponse;
 import com.tournament.entity.AppUser;
 import com.tournament.exceptions.RecordAlreadyExistsException;
@@ -29,6 +30,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
     private final AppUserRepository appUserRepository;
     private final JWTServiceImpl jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     public AppTokenValidationResponse validateToken(String token) {
@@ -55,8 +57,33 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
     }
 
     @Override
+    public AppAuthenticationResponse authenticate(AppAuthenticationRequest appAuthenticationRequest) {
+        try {
+
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(appAuthenticationRequest.getUsername(), appAuthenticationRequest.getPassword())
+            );
+
+            AppUser user = appUserRepository.findById(appAuthenticationRequest.getUsername())
+                    .orElseThrow(() -> new RecordNotFoundException("User not found with username: " + appAuthenticationRequest.getUsername()));
+
+
+            String JWTToken = jwtService.generateToken(user);
+
+            return AppAuthenticationResponse.builder()
+                    .token(JWTToken)
+                    .build();
+        } catch (RecordNotFoundException e) {
+            throw new RecordNotFoundException(e.getMessage());
+        } catch (AuthenticationException e) {
+            throw new UserUnAuthorizedException(e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    @Override
     public AppAuthenticationResponse register(AppRegistrationRequest appRegistrationRequest) {
-        String JWTToken;
         try {
             appUserRepository.findById(appRegistrationRequest.getUsername())
                     .ifPresent(user -> {
@@ -76,7 +103,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
 
             appUserRepository.save(user);
 
-            JWTToken = jwtService.generateToken(user);
+            String JWTToken = jwtService.generateToken(user);
 
             return AppAuthenticationResponse.builder()
                     .token(JWTToken)

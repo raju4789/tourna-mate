@@ -1,9 +1,9 @@
 package com.tournament.filters;
 
 import com.tournament.dto.common.CommonApiResponse;
+import com.tournament.dto.security.AppTokenValidationRequest;
 import com.tournament.dto.security.AppTokenValidationResponse;
-import com.tournament.feign.TourniRouteAuthenticationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.tournament.feign.TourniFeignClient;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.context.annotation.Lazy;
@@ -15,13 +15,12 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     private final RouteValidator routeValidator;
 
-    @Lazy
-    private final TourniRouteAuthenticationService routeAuthenticationService;
+    private final TourniFeignClient tourniFeignClient;
 
-    public AuthenticationFilter(RouteValidator routeValidator, TourniRouteAuthenticationService routeAuthenticationService) {
+    public AuthenticationFilter(RouteValidator routeValidator, @Lazy TourniFeignClient tourniFeignClient) {
         super(Config.class);
         this.routeValidator = routeValidator;
-        this.routeAuthenticationService = routeAuthenticationService;
+        this.tourniFeignClient = tourniFeignClient;
     }
 
     @Override
@@ -34,19 +33,21 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
                 final String authorizationHeader = exchange.getRequest().getHeaders().get("Authorization").get(0);
 
-                if(authorizationHeader != null && !authorizationHeader.startsWith("Bearer ")) {
+                if (authorizationHeader != null && !authorizationHeader.startsWith("Bearer ")) {
                     throw new RuntimeException("Authorization header is invalid");
                 }
 
                 final String token = authorizationHeader.substring(7);
 
                 try {
+                    AppTokenValidationRequest req = AppTokenValidationRequest.builder().token(token).build();
+                    ResponseEntity<CommonApiResponse<AppTokenValidationResponse>> res = tourniFeignClient.validateToken(req);
 
-                    ResponseEntity<CommonApiResponse<AppTokenValidationResponse>>  res = routeAuthenticationService.validateToken(token);
-                    if(!res.getBody().isSuccess()) {
+                    if (!res.getBody().isSuccess() || !res.getBody().getData().isValid()) {
                         throw new RuntimeException("Authorization header is invalid");
                     }
-                }catch (Exception e) {
+
+                } catch (Exception e) {
                     throw new RuntimeException("Authorization header is invalid");
                 }
             }
@@ -54,7 +55,5 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         };
     }
 
-    public static class Config {
-
-    }
+    public static class Config { }
 }
