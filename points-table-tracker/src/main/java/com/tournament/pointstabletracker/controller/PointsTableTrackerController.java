@@ -8,10 +8,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.GET;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,6 +50,7 @@ public class PointsTableTrackerController {
                     @ApiResponse(responseCode = "403", description = "Unauthorized / Invalid token")
             })
     @PostMapping("addMatchResult")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CommonApiResponse<String>> addMatchResult(@Valid @RequestBody AddMatchResultRequest addMatchResultRequest) {
 
         pointsTableTrackerService.addMatchResult(addMatchResultRequest);
