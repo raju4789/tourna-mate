@@ -12,74 +12,74 @@ services:
       MYSQL_USER: tournament_admin
       MYSQL_PASSWORD: tournament@2023
     ports:
-        - "3307:3306"
-    expose:
-      - "3307"
+      - "3307:3306"
+    networks:
+      - tourni-network
 
   tourni-discovery-service:
     image: raju5800/tourni-discovery-service:latest
     container_name: tourni-discovery-service
-    pull_policy: always
     ports:
       - "8761:8761"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - tourni-network
 
   tourni-gateway:
     image: raju5800/tourni-gateway:latest
     container_name: tourni-gateway
-    pull_policy: always
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY= TRACE
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=TRACE
     depends_on:
       - tourni-discovery-service
-
-
+    networks:
+      - tourni-network
 
   tourni-identity-service:
     image: raju5800/tourni-identity-service:latest
     container_name: tourni-identity-service
-    pull_policy: always
     ports:
       - "8082:8080"
-    expose:
-      - "8082"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - tourni-mysql
       - tourni-discovery-service
+    networks:
+      - tourni-network
 
   points-table-tracker:
     image: raju5800/points-table-tracker:latest
     container_name: points-table-tracker
-    pull_policy: always
     ports:
       - "8083:8080"
-    expose:
-      - "8083"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-identity-service
+    networks:
+      - tourni-network
 
   tourni-ai:
     image: raju5800/tourni-ai:latest
     container_name: tourni-ai
-    pull_policy: always
     ports:
       - "8084:8080"
-    expose:
-      - "8084"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-identity-service
+    networks:
+      - tourni-network
 
+networks:
+  tourni-network:
+    driver: bridge
