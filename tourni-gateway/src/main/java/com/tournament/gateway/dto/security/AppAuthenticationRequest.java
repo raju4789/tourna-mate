@@ -1,4 +1,4 @@
-package com.tournament.dto.security;
+package com.tournament.gateway.dto.security;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

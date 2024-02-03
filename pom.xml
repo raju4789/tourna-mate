@@ -15,11 +15,11 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>points-table-tracker</module>
-        <module>tourni-ai</module>
         <module>tourni-discovery-service</module>
-        <module>tourni-gateway</module>
+        <module>tourni-ai</module>
         <module>tourni-identity-service</module>
+        <module>points-table-tracker</module>
+        <module>tourni-gateway</module>
     </modules>
 
     <properties>
@@ -56,8 +56,21 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <from>
+                        <image>eclipse-temurin:17.0.4.1_1-jre</image>
+                    </from>
+                    <to>
+                        <image>registry.hub.docker.com/raju5800/${project.artifactId}</image>
+                        <auth>
+                            <username>raju5800</username>
+                            <password><![CDATA[&AaRtd3$HVSzW(V]]></password>
+                        </auth>
+                    </to>
+                </configuration>
             </plugin>
         </plugins>
     </build>

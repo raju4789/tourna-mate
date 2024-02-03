@@ -1,6 +1,6 @@
-package com.tournament.service;
+package com.tournament.gateway.service;
 
-import com.tournament.dto.security.AppTokenValidationResponse;
+import com.tournament.gateway.dto.security.AppTokenValidationResponse;
 import reactor.core.publisher.Mono;
 
 public interface TourniGatewayAuthenticationService {

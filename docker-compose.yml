@@ -1,0 +1,85 @@
+version: '3.1'
+
+services:
+  tourni-mysql:
+    container_name: tourni-mysql
+    image: mysql:5.7
+    volumes:
+      - ./mysql_tournament_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: Raju@4789
+      MYSQL_DATABASE: tournament_db
+      MYSQL_USER: tournament_admin
+      MYSQL_PASSWORD: tournament@2023
+    ports:
+        - "3307:3306"
+    expose:
+      - "3307"
+
+  tourni-discovery-service:
+    image: raju5800/tourni-discovery-service:latest
+    container_name: tourni-discovery-service
+    pull_policy: always
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  tourni-gateway:
+    image: raju5800/tourni-gateway:latest
+    container_name: tourni-gateway
+    pull_policy: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY= TRACE
+    depends_on:
+      - tourni-discovery-service
+
+
+
+  tourni-identity-service:
+    image: raju5800/tourni-identity-service:latest
+    container_name: tourni-identity-service
+    pull_policy: always
+    ports:
+      - "8082:8080"
+    expose:
+      - "8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - tourni-mysql
+      - tourni-discovery-service
+
+  points-table-tracker:
+    image: raju5800/points-table-tracker:latest
+    container_name: points-table-tracker
+    pull_policy: always
+    ports:
+      - "8083:8080"
+    expose:
+      - "8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - tourni-mysql
+      - tourni-discovery-service
+      - tourni-identity-service
+
+  tourni-ai:
+    image: raju5800/tourni-ai:latest
+    container_name: tourni-ai
+    pull_policy: always
+    ports:
+      - "8084:8080"
+    expose:
+      - "8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - tourni-mysql
+      - tourni-discovery-service
+      - tourni-identity-service
+

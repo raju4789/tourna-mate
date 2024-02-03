@@ -1,0 +1,44 @@
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://tourni-discovery-service:8761/eureka/
+
+spring:
+  application:
+    name: tourni-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: points-table-tracker
+          uri: lb://points-table-tracker
+          predicates:
+            - Path=/api/v1/pointsTable/**
+          filters:
+            - AuthenticationFilter
+        - id: tourni-ai
+          uri: lb://tourni-ai
+          predicates:
+            - Path=/api/v1/ai/**
+          filters:
+            - AuthenticationFilter
+        - id: tourni-discovery-server
+          uri: http://tourni-discovery-service:8761
+          predicates:
+            - Path=/eureka/web
+          filters:
+            - SetPath=/
+        - id: tourni-discovery-server-static
+          uri: http://tourni-discovery-service:8761
+          predicates:
+            - Path=/eureka/**
+        - id: tourni-identity-service
+          uri: lb://tourni-identity-service
+          predicates:
+            - Path=/api/v1/auth/**

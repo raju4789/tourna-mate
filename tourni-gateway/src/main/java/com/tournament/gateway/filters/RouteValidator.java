@@ -1,4 +1,4 @@
-package com.tournament.filters;
+package com.tournament.gateway.filters;
 
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;

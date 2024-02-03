@@ -1,11 +1,10 @@
-package com.tournament.service;
+package com.tournament.gateway.service;
 
-import com.tournament.dto.common.CommonApiResponse;
-import com.tournament.dto.security.AppTokenValidationRequest;
-import com.tournament.dto.security.AppTokenValidationResponse;
-import com.tournament.exceptions.TokenValidationFailedException;
+import com.tournament.gateway.dto.common.CommonApiResponse;
+import com.tournament.gateway.dto.security.AppTokenValidationRequest;
+import com.tournament.gateway.dto.security.AppTokenValidationResponse;
+import com.tournament.gateway.exceptions.TokenValidationFailedException;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.core.ParameterizedTypeReference;

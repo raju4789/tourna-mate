@@ -1,4 +1,4 @@
-package com.tournament.exceptions;
+package com.tournament.gateway.exceptions;
 
 import lombok.Getter;
 import lombok.Setter;

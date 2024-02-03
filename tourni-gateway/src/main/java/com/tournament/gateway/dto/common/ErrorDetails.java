@@ -1,4 +1,4 @@
-package com.tournament.dto.common;
+package com.tournament.gateway.dto.common;
 
 import lombok.*;
 

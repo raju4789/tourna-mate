@@ -1,7 +1,7 @@
-package com.tournament.filters;
+package com.tournament.gateway.filters;
 
-import com.tournament.exceptions.TokenValidationFailedException;
-import com.tournament.service.TourniGatewayAuthenticationService;
+import com.tournament.gateway.service.TourniGatewayAuthenticationService;
+import com.tournament.gateway.exceptions.TokenValidationFailedException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

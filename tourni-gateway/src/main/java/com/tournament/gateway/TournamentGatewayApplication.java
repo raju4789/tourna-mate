@@ -1,4 +1,4 @@
-package com.tournament;
+package com.tournament.gateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

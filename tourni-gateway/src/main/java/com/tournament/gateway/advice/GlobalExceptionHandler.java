@@ -1,8 +1,8 @@
-package com.tournament.advice;
+package com.tournament.gateway.advice;
 
-import com.tournament.dto.common.CommonApiResponse;
-import com.tournament.dto.common.ErrorDetails;
-import com.tournament.exceptions.TokenValidationFailedException;
+import com.tournament.gateway.dto.common.CommonApiResponse;
+import com.tournament.gateway.dto.common.ErrorDetails;
+import com.tournament.gateway.exceptions.TokenValidationFailedException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

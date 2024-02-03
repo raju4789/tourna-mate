@@ -1,4 +1,4 @@
-package com.tournament.config;
+package com.tournament.gateway.config;
 
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
