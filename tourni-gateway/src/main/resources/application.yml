@@ -4,7 +4,7 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: http://tourni-discovery-server:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
 
 spring:
   application:
@@ -51,3 +51,12 @@ jwt:
   tokenPrefix: 'Bearer '
   authorizationHeaderString: Authorization
   headerSkipLength: 7
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    level: '%5p [${spring.application.name}, %X{traceId:-}, %X{spanId:-}]'

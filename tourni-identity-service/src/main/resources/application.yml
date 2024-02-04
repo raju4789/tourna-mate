@@ -10,14 +10,11 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3307}/tournament_db
-    username: ${MYSQL_USER:tournament_admin
+    username: ${MYSQL_USER:tournament_admin}
     password: ${MYSQL_PASSWORD:tournament@2023}
   sql:
     init:
       mode: always
-
-server:
-  port: 0
 
 jwt:
   secret: 6a8e1e15d6b7892e8e6f13d7bc54b6c07d398c57923c8b2044973203e7023704
@@ -28,3 +25,11 @@ eureka:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    level: '%5p [${spring.application.name}, %X{traceId:-}, %X{spanId:-}]'
