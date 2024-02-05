@@ -108,7 +108,12 @@ services:
   tourni-ai:
     image: raju5800/tourni-ai:latest
     container_name: tourni-ai
-    pull_policy: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
+      MANAGEMENT_TRACING_ENDPOINT: http://${ZIPKIN_HOST}:${ZIPKIN_PORT}/api/v2/spans
     ports:
       - "8084:8080"
     networks:
@@ -117,17 +122,6 @@ services:
       - tourni-mysql
       - tourni-zipkin-server
       - tourni-discovery-service
-      - tourni-identity-service
-    environment:
-      MYSQL_HOST: tourni-mysql
-      MYSQL_ROOT_PASSWORD: Raju@4789
-      MYSQL_DATABASE: tournament_db
-      MYSQL_USER: tournament_admin
-      MYSQL_PASSWORD: tournament@2023
-      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka
-      EUREKA.CLIENT.FETCH-REGISTRY: true
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
-    restart: always
 
 # Volumes
 volumes:
