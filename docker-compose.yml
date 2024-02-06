@@ -10,7 +10,7 @@ services:
       MYSQL_USER: tournament_admin
       MYSQL_PASSWORD: tournament@2023
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql-database-data-volume:/var/lib/mysql
     healthcheck:
@@ -30,6 +30,12 @@ services:
       - "9411:9411"
     networks:
       - tourni-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://tourni-zipkin-server:9411/api/v2/services"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 
   tourni-discovery-service:
     image: raju5800/tourni-discovery-service:latest
@@ -41,6 +47,12 @@ services:
       - tourni-network
     depends_on:
         - tourni-zipkin-server
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://tourni-discovery-service:8761/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     environment:
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
 
@@ -56,7 +68,7 @@ services:
       - tourni-zipkin-server
       - tourni-discovery-service
     environment:
-      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
 
@@ -74,6 +86,7 @@ services:
       - tourni-discovery-service
     environment:
       MYSQL_HOST: tourni-mysql
+      MYSQL_PORT: 3306
       MYSQL_ROOT_PASSWORD: Raju@4789
       MYSQL_DATABASE: tournament_db
       MYSQL_USER: tournament_admin
@@ -97,6 +110,7 @@ services:
       - tourni-identity-service
     environment:
       MYSQL_HOST: tourni-mysql
+      MYSQL_PORT: 3306
       MYSQL_ROOT_PASSWORD: Raju@4789
       MYSQL_DATABASE: tournament_db
       MYSQL_USER: tournament_admin
@@ -109,11 +123,13 @@ services:
     image: raju5800/tourni-ai:latest
     container_name: tourni-ai
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_HOST}:${EUREKA_PORT}/eureka
-      MANAGEMENT_TRACING_ENDPOINT: http://${ZIPKIN_HOST}:${ZIPKIN_PORT}/api/v2/spans
+      SPRING_DATASOURCE_URL: jdbc:mysql://tourni-mysql:3306/tournament_db
+      MYSQL_HOST: tourni-mysql
+      MYSQL_PORT: 3306
+      SPRING_DATASOURCE_USERNAME: tournament_admin
+      SPRING_DATASOURCE_PASSWORD: tournament@2023
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://tourni-discovery-service:8761/eureka
+      MANAGEMENT_TRACING_ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
     ports:
       - "8084:8080"
     networks:

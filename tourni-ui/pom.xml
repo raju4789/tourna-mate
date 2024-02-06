@@ -1,0 +1,85 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.tournament</groupId>
+        <artifactId>tourna-mate</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath> <!-- adjust the path as necessary -->
+    </parent>
+
+    <artifactId>tourni-ui</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <build>
+        <plugins>
+            <!-- Frontend-maven-plugin to install Node.js and build the React app -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.12.0</version> <!-- Use the latest version available -->
+                <configuration>
+                    <nodeVersion>v16.13.0</nodeVersion> <!-- Specify your Node version -->
+                    <npmVersion>8.1.0</npmVersion> <!-- Specify your NPM version -->
+                    <workingDirectory>${project.basedir}</workingDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>npm run build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Exec-maven-plugin to build the Docker image -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version> <!-- Use the latest version available -->
+                <executions>
+                    <execution>
+                        <id>build-docker-image</id>
+                        <phase>package</phase> <!-- Bind to a lifecycle phase like package or install -->
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>docker</executable>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>-t</argument>
+                                <argument>registry.hub.docker.com/raju5800/${project.artifactId}</argument>
+                                <argument>.</argument>
+                                <argument>login</argument>
+                                <argument>--username</argument>
+                                <argument>raju5800</argument>
+                                <argument>--password</argument>
+                                <argument><![CDATA[&AaRtd3$HVSzW(V]]></argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

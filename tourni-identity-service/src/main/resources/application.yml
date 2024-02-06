@@ -9,7 +9,7 @@ spring:
     defer-datasource-initialization: true
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3307}/tournament_db
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/tournament_db
     username: ${MYSQL_USER:tournament_admin}
     password: ${MYSQL_PASSWORD:tournament@2023}
   sql:
@@ -29,6 +29,12 @@ management:
   tracing:
     sampling:
       probability: 1.0
+  endpoint:
+    web:
+      exposure:
+        include: "*"
+    health:
+      show-details: always
 
 logging:
   pattern:

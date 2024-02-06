@@ -25,6 +25,12 @@ management:
   tracing:
     sampling:
       probability: 1.0
+  endpoint:
+    web:
+      exposure:
+        include: "*"
+    health:
+      show-details: always
 
 logging:
   pattern:
