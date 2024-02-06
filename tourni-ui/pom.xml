@@ -22,7 +22,7 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>1.12.0</version> <!-- Use the latest version available -->
                 <configuration>
-                    <nodeVersion>v16.13.0</nodeVersion> <!-- Specify your Node version -->
+                    <nodeVersion>v18.19.0</nodeVersion> <!-- Specify your Node version -->
                     <npmVersion>8.1.0</npmVersion> <!-- Specify your NPM version -->
                     <workingDirectory>${project.basedir}</workingDirectory>
                 </configuration>
@@ -51,32 +51,46 @@
                 </executions>
             </plugin>
 
-            <!-- Exec-maven-plugin to build the Docker image -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version> <!-- Use the latest version available -->
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.4.0</version>
+                <configuration>
+                    <from>
+                        <image>nginx:stable-alpine</image> <!-- Use Nginx to serve the React app -->
+                    </from>
+                    <to>
+                        <image>registry.hub.docker.com/raju5800/${project.artifactId}:${project.version}</image>
+                        <auth>
+                            <username>raju5800</username>
+                            <password></password> <!-- Use environment variable for password -->
+                        </auth>
+                    </to>
+                    <container>
+                        <ports>
+                            <port>80</port> <!-- Nginx default port -->
+                        </ports>
+                        <entrypoint>
+                            <shell>nginx</shell>
+                            <option>-g</option>
+                            <option>'daemon off;'</option>
+                        </entrypoint>
+                    </container>
+                    <extraDirectories>
+                        <paths>
+                            <path>
+                                <from>${project.basedir}/build</from> <!-- Path to React build output -->
+                                <into>/usr/share/nginx/html</into> <!-- Nginx static content directory -->
+                            </path>
+                        </paths>
+                    </extraDirectories>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>build-docker-image</id>
-                        <phase>package</phase> <!-- Bind to a lifecycle phase like package or install -->
+                        <phase>package</phase>
                         <goals>
-                            <goal>exec</goal>
+                            <goal>build</goal>
                         </goals>
-                        <configuration>
-                            <executable>docker</executable>
-                            <arguments>
-                                <argument>build</argument>
-                                <argument>-t</argument>
-                                <argument>registry.hub.docker.com/raju5800/${project.artifactId}</argument>
-                                <argument>.</argument>
-                                <argument>login</argument>
-                                <argument>--username</argument>
-                                <argument>raju5800</argument>
-                                <argument>--password</argument>
-                                <argument><![CDATA[&AaRtd3$HVSzW(V]]></argument>
-                            </arguments>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
