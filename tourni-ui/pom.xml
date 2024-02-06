@@ -17,28 +17,34 @@
     <build>
         <plugins>
             <!-- Frontend-maven-plugin to install Node.js and build the React app -->
+            <!-- Frontend Maven Plugin -->
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>1.12.0</version> <!-- Use the latest version available -->
-                <configuration>
-                    <nodeVersion>v18.19.0</nodeVersion> <!-- Specify your Node version -->
-                    <npmVersion>8.1.0</npmVersion> <!-- Specify your NPM version -->
-                    <workingDirectory>${project.basedir}</workingDirectory>
-                </configuration>
                 <executions>
+                    <!-- Install Node.js and npm -->
                     <execution>
                         <id>install node and npm</id>
                         <goals>
                             <goal>install-node-and-npm</goal>
                         </goals>
+                        <configuration>
+                            <nodeVersion>v16.13.0</nodeVersion> <!-- Specify your Node.js version -->
+                            <npmVersion>8.1.0</npmVersion> <!-- Specify your npm version -->
+                        </configuration>
                     </execution>
+                    <!-- Install npm dependencies -->
                     <execution>
                         <id>npm install</id>
                         <goals>
                             <goal>npm</goal>
                         </goals>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
                     </execution>
+                    <!-- Build the React application -->
                     <execution>
                         <id>npm run build</id>
                         <goals>
@@ -50,7 +56,7 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <!-- Jib Maven Plugin to build and push Docker image -->
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>
