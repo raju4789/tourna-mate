@@ -1,29 +1,34 @@
-# Build stage
-FROM node:18.19.0-slim as build-stage
+# Use an official Node runtime as a parent image
+FROM node:18.19.0-slim
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
+# Copy package.json and package-lock.json (or yarn.lock if you use Yarn)
 COPY package*.json ./
+# If you use Yarn, also copy yarn.lock and uncomment the next line
+# COPY yarn.lock ./
 
-# Install dependencies
+# Install project dependencies
 RUN npm install
+# If you use Yarn, replace the above line with:
+# RUN yarn install --frozen-lockfile
 
-# Copy project files and folders to the current working directory (i.e. 'app' folder)
+# Copy the rest of your app's source code
 COPY . .
 
-# Build the app
+# Build the React application using Vite
 RUN npm run build
+# If you use Yarn, replace the above line with:
+# RUN yarn build
 
-# Final stage
-FROM nginx:stable-alpine as production-stage
+# Install a simple HTTP server to serve static content
+RUN npm install -g http-server
+# If you use Yarn, replace the above line with:
+# RUN yarn global add http-server
 
-# Copy the build output to replace the default nginx contents.
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+# Set the command to start the server
+CMD ["http-server", "dist", "-p", "3000"]
 
-# Expose port 80 to the outside once the container has launched
-EXPOSE 80
-
-# Start nginx and keep the process running
-CMD ["nginx", "-g", "daemon off;"]
+# Expose the port the app runs on
+EXPOSE 3000
