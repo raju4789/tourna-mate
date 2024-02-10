@@ -18,7 +18,9 @@ interface ILoginFormInput {
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<ILoginFormInput>();
+  const { register, handleSubmit, formState: { errors } } = useForm<ILoginFormInput>({
+    mode: 'onTouched', // Validation will trigger on the blur event
+  });
 
   const onSubmit = async (data: ILoginFormInput) => {
     try {
@@ -52,7 +54,13 @@ const Login: React.FC = () => {
             placeholder="Enter username"
             fullWidth
             required
-            {...register('username', { required: 'Username is required' })}
+            {...register('username', {
+              required: 'Username is required',
+              minLength: {
+                value: 4,
+                message: 'Username must be at least 4 characters long',
+              },
+            })}
             error={!!errors.username}
             helperText={errors.username?.message}
           />
@@ -62,7 +70,13 @@ const Login: React.FC = () => {
             type="password"
             fullWidth
             required
-            {...register('password', { required: 'Password is required' })}
+            {...register('password', {
+              required: 'Password is required',
+              minLength: {
+                value: 8,
+                message: 'Password must be at least 8 characters long',
+              },
+            })}
             error={!!errors.password}
             helperText={errors.password?.message}
           />
