@@ -1,16 +1,18 @@
-# Build stage
-FROM node:18.19.0-slim as build-stage
+# Use an official Node runtime as a parent image
+FROM node:18.19.0-slim
 
-# Set the working directory
+# Set the working directory in the container
 WORKDIR /app
 
 # Copy package.json and package-lock.json (if available)
 COPY package.json .
 
-# Install dependencies
+# Install project dependencies
 RUN npm install
+# If you use Yarn, replace the above line with:
+# RUN yarn install --frozen-lockfile
 
-# Copy project files and folders to the current working directory (i.e. 'app' folder)
+# Copy the rest of your app's source code
 COPY . .
 
 # Build the app
