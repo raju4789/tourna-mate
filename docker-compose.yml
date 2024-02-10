@@ -36,7 +36,6 @@ services:
       timeout: 5s
       retries: 3
 
-
   tourni-discovery-service:
     image: raju5800/tourni-discovery-service:latest
     container_name: tourni-discovery-service
@@ -139,9 +138,22 @@ services:
       - tourni-zipkin-server
       - tourni-discovery-service
 
+  tourni-ui: # New service for tourni-ui React.js project
+    image: raju5800/tourni-ui:latest # Replace with the image name for your tourni-ui project
+    container_name: tourni-ui
+    ports:
+      - "8000:8000" # Assuming your React.js app runs on port 3000
+    networks:
+      - tourni-network
+    depends_on:
+      - tourni-gateway # Assuming tourni-ui depends on tourni-gateway
+    environment:
+      REACT_APP_API_URL: http://tourni-gateway:8080 # URL of the backend API
+
 # Volumes
 volumes:
   mysql-database-data-volume:
 
+# Networks
 networks:
   tourni-network:

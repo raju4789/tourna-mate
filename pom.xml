@@ -20,7 +20,6 @@
         <module>tourni-identity-service</module>
         <module>points-table-tracker</module>
         <module>tourni-gateway</module>
-        <module>tourni-ui</module>
     </modules>
 
     <properties>
