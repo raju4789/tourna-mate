@@ -1,10 +1,9 @@
-/* eslint-disable max-len */
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
 import {
-  FormControlLabel, Grid, Typography,
+  FormControlLabel, Grid, Typography, Checkbox,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { CheckBox } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import {
@@ -12,21 +11,18 @@ import {
 } from './Login.styled';
 import LoginService from '../../services/LoginService';
 
+interface ILoginFormInput {
+  username: string;
+  password: string;
+}
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors } } = useForm<ILoginFormInput>();
 
-  const [username, setUserName] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-
-  const handleUserNameChange = (event: React.ChangeEvent<HTMLInputElement>) => setUserName(event.target.value);
-  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => setPassword(event.target.value);
-
-  const [message, setMessage] = React.useState('');
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: ILoginFormInput) => {
     try {
-      const loginCredentials = { username, password };
-      const response = await LoginService.login(loginCredentials);
+      const response = await LoginService.login(data);
       const body = response.data;
       if (body.jwt) {
         localStorage.clear();
@@ -34,15 +30,13 @@ const Login: React.FC = () => {
         localStorage.setItem('userName', body.userName);
         navigate('/dashboard');
       } else {
-        setMessage('Login failed');
+        // Handle login failure
       }
     } catch (error) {
-      setMessage('Login failed');
+      // Handle login error
     }
-
-    setUserName('');
-    setPassword('');
   };
+
   return (
     <Grid container justifyContent="center" alignItems="center" style={{ height: '100vh' }}>
       <StyledPaper elevation={10}>
@@ -52,17 +46,36 @@ const Login: React.FC = () => {
           </StyledAvatar>
           <Typography variant="h5">Login</Typography>
         </Grid>
-        <StyledTextField label="Username" placeholder="Enter username" fullWidth required onChange={handleUserNameChange} />
-        <StyledTextField label="Password" placeholder="Enter password" type="password" fullWidth required onChange={handlePasswordChange} />
-        <FormControlLabel
-          label="Remember me"
-          control={<CheckBox color="primary" />}
-        />
-        <StyledButton type="submit" color="primary" variant="contained" fullWidth onClick={handleSubmit}>
-          Login
-        </StyledButton>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <StyledTextField
+            label="Username"
+            placeholder="Enter username"
+            fullWidth
+            required
+            {...register('username', { required: 'Username is required' })}
+            error={!!errors.username}
+            helperText={errors.username?.message}
+          />
+          <StyledTextField
+            label="Password"
+            placeholder="Enter password"
+            type="password"
+            fullWidth
+            required
+            {...register('password', { required: 'Password is required' })}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+          />
+          <FormControlLabel
+            label="Remember me"
+            control={<Checkbox color="primary" />}
+          />
+          <StyledButton type="submit" color="primary" variant="contained" fullWidth>
+            Login
+          </StyledButton>
+        </form>
         <Typography style={{ margin: 7, color: 'red' }} variant="body1">
-          {message}
+          {/* Display login error message here if needed */}
         </Typography>
         <Typography>
           Do you have an account?
@@ -73,4 +86,5 @@ const Login: React.FC = () => {
     </Grid>
   );
 };
+
 export default Login;
