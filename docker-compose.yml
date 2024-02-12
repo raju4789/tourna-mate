@@ -148,7 +148,7 @@ services:
     depends_on:
       - tourni-gateway # Assuming tourni-ui depends on tourni-gateway
     environment:
-      VITE_REACT_APP_API_URL: http://tourni-gateway:8080 # URL of the backend API
+      VITE_REACT_APP_API_URL: http://localhost:8080 # URL of the backend API
 
 # Volumes
 volumes:

@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "proxy": {
+    "/api/v1": {
+      "target": "http://localhost:8080",
+      "changeOrigin": true
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

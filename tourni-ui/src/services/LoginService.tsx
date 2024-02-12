@@ -10,7 +10,7 @@ const headers = {
   'Access-Control-Allow-Origin': '*',
 };
 
-export const loginUser = (loginCredentials: ILoginRequest) => axios.post(`${API_BASE_URL}/api/vi/auth/authenticate`, loginCredentials, { headers });
+export const loginUser = (loginCredentials: ILoginRequest) => axios.post('/api/v1/auth/authenticate', loginCredentials, { headers });
 
 export const registerUser = (user: ISignupRequest) => {
   const registrationRequest: IRegistrationRequest = {
