@@ -1,9 +1,8 @@
 import React from 'react';
+import { Outlet } from 'react-router';
 
 const RootComponent: React.FC = () => (
-  <div>
-    {/* Your component content goes here */}
-  </div>
+          <Outlet /> 
 );
 
 export default RootComponent;
