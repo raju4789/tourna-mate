@@ -10,6 +10,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 8001,
+    proxy: {
+      '/api/v1': {
+        target: 'http://localhost:8080', // The backend server
+        changeOrigin: true, // Needed for virtual hosted sites
+        secure: false, // Set to true if your backend is served over HTTPS
+      },
+    },
   },
   test: {
     globals: true,
