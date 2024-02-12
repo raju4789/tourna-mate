@@ -1,23 +1,25 @@
 import axios from 'axios';
+import {
+  ILoginRequest, IRegistrationRequest, ISignupRequest,
+} from '../types/Types';
 
-const API_BASE_URL = '/user';
+const API_BASE_URL: string = import.meta.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1/auth';
 
 const headers = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
 };
-const login = (loginCredentials: any) => axios.post(`${API_BASE_URL}/login`, loginCredentials, { headers });
 
-const register = (user: { confirmPassword: string; password?: string; }) => {
-  const { password, confirmPassword } = user;
+export const loginUser = (loginCredentials: ILoginRequest) => axios.post(`${API_BASE_URL}/authenticate`, loginCredentials, { headers });
 
-  if (password !== confirmPassword) {
-    throw new Error("Passwords don't match");
-  }
+export const registerUser = (user: ISignupRequest) => {
+  const registrationRequest: IRegistrationRequest = {
+    username: user.username,
+    email: user.email,
+    password: user.password,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  };
 
-  delete user.confirmPassword;
-
-  return axios.post(`${API_BASE_URL}/register`, user, { headers });
+  return axios.post(`${API_BASE_URL}/register`, registrationRequest, { headers });
 };
-
-export default { login, register };

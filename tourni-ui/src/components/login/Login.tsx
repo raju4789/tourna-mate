@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   FormControlLabel, Grid, Typography, Checkbox,
@@ -6,36 +6,38 @@ import {
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
+import { Axios, AxiosResponse } from 'axios';
 import {
   StyledPaper, StyledAvatar, StyledTextField, StyledButton,
 } from './Login.styled';
-import LoginService from '../../services/LoginService';
-
-interface ILoginFormInput {
-  username: string;
-  password: string;
-}
+import {
+  ICommonApiResponse, IErrorDetails, ILoginRequest, ILoginResponse,
+} from '../../types/Types';
+import { loginUser } from '../../services/LoginService';
 
 const Login: React.FC = () => {
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm<ILoginFormInput>({
+  const { register, handleSubmit, formState: { errors } } = useForm<ILoginRequest>({
     mode: 'onTouched', // Validation will trigger on the blur event
   });
 
-  const onSubmit = async (data: ILoginFormInput) => {
+  const onSubmit = async (data: ILoginRequest) => {
     try {
-      const response = await LoginService.login(data);
-      const body = response.data;
-      if (body.jwt) {
+      const response: AxiosResponse<ICommonApiResponse<ILoginResponse>> = await loginUser(data);
+      const body: ICommonApiResponse<ILoginResponse> = response.data;
+      if (body.isSuccess) {
         localStorage.clear();
-        localStorage.setItem('jwt', body.jwt);
-        localStorage.setItem('userName', body.userName);
-        navigate('/dashboard');
+        localStorage.setItem('jwt', body.data.jwt);
+        localStorage.setItem('role', body.data.role || '');
+        navigate('/pointsTable');
       } else {
-        // Handle login failure
+        const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
+        setErrorMessage(`Login failed with error: ${errorDetails.errorMessage}. Please try again.`);
       }
     } catch (error) {
-      // Handle login error
+      console.error('Login failed ', error);
+      setErrorMessage('Login failed with unknown error. Please try again.');
     }
   };
 
@@ -56,10 +58,6 @@ const Login: React.FC = () => {
             required
             {...register('username', {
               required: 'Username is required',
-              minLength: {
-                value: 4,
-                message: 'Username must be at least 4 characters long',
-              },
             })}
             error={!!errors.username}
             helperText={errors.username?.message}
@@ -72,10 +70,6 @@ const Login: React.FC = () => {
             required
             {...register('password', {
               required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Password must be at least 8 characters long',
-              },
             })}
             error={!!errors.password}
             helperText={errors.password?.message}
@@ -89,7 +83,7 @@ const Login: React.FC = () => {
           </StyledButton>
         </form>
         <Typography style={{ margin: 7, color: 'red' }} variant="body1">
-          {/* Display login error message here if needed */}
+          {errorMessage}
         </Typography>
         <Typography>
           Do you have an account?
