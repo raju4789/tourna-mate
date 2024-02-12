@@ -3,14 +3,14 @@ import {
   ILoginRequest, IRegistrationRequest, ISignupRequest,
 } from '../types/Types';
 
-const API_BASE_URL: string = import.meta.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1/auth';
-
+const API_BASE_URL: string = import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:8080';
+console.log('API_BASE_URL: ', API_BASE_URL);
 const headers = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
 };
 
-export const loginUser = (loginCredentials: ILoginRequest) => axios.post(`${API_BASE_URL}/authenticate`, loginCredentials, { headers });
+export const loginUser = (loginCredentials: ILoginRequest) => axios.post(`${API_BASE_URL}/api/vi/auth/authenticate`, loginCredentials, { headers });
 
 export const registerUser = (user: ISignupRequest) => {
   const registrationRequest: IRegistrationRequest = {
