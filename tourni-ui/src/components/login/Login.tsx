@@ -6,7 +6,7 @@ import {
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
-import { Axios, AxiosResponse } from 'axios';
+import { AxiosResponse } from 'axios';
 import {
   StyledPaper, StyledAvatar, StyledTextField, StyledButton,
 } from './Login.styled';
@@ -19,7 +19,7 @@ const Login: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors } } = useForm<ILoginRequest>({
-    mode: 'onTouched', // Validation will trigger on the blur event
+    mode: 'onTouched',
   });
 
   const onSubmit = async (data: ILoginRequest) => {
@@ -42,7 +42,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Grid container justifyContent="center" alignItems="center" style={{ height: '100vh' }}>
+    <Grid container justifyContent="center" alignItems="center" style={{ height: '100vh', width: '100%' }}>
       <StyledPaper elevation={10}>
         <Grid container justifyContent="center" alignItems="center" direction="column">
           <StyledAvatar>
