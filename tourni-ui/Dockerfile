@@ -16,8 +16,6 @@ RUN npm install
 # Copy the rest of your app's source code
 COPY . .
 
-ARG BUILD_MODE
-
 # Build your app for the specified build mode
 RUN npm run build:${BUILD_MODE}
 
@@ -26,6 +24,10 @@ EXPOSE 8000
 
 # Install a simple http server for serving static content
 RUN npm install -g serve
+
+# Consider running your application as a non-root user for security
+# RUN adduser -D myuser
+# USER myuser
 
 # Start the server using the build directory
 CMD ["serve", "-s", "dist", "-l", "tcp://${HOST:-0.0.0.0}:8000"]
