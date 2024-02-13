@@ -40,3 +40,10 @@ export interface IRegisterResponse {
   jwt: string;
   role?: string;
 }
+
+export interface AppEnv {
+  env: {
+    API_BASE_URL?: string;
+    UI_PORT?: string;
+  };
+}

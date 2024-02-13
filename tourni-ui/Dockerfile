@@ -1,30 +1,26 @@
 # Use an official Node runtime as a parent image
 FROM node:18.19.0-slim
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
-COPY package.json package-lock.json* ./
+# Define the build argument for the build mode
+ARG BUILD_MODE
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
 # Install project dependencies
 RUN npm install
-# If you use Yarn, replace the above line with:
-# RUN yarn install --frozen-lockfile
 
 # Copy the rest of your app's source code
 COPY . .
 
-COPY inject-env.js ./
+# Build your app for the specified build mode
+RUN npm run build:${BUILD_MODE}
 
-# Copy the entrypoint script into the image
-COPY entrypoint.sh /usr/local/bin/
+# Install a simple http server for serving static content
+RUN npm install -g serve
 
-# Make the entrypoint script executable
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Set the entrypoint script to run when the container starts
-ENTRYPOINT ["entrypoint.sh"]
-
-# Expose the port the app runs on
-EXPOSE 8000
+# Start the server using the build directory
+CMD ["serve", "-s", "dist"]
