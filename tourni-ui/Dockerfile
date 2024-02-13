@@ -21,8 +21,11 @@ ARG BUILD_MODE
 # Build your app for the specified build mode
 RUN npm run build:${BUILD_MODE}
 
+# Expose port 8000
+EXPOSE 8000
+
 # Install a simple http server for serving static content
 RUN npm install -g serve
 
 # Start the server using the build directory
-CMD ["serve", "-s", "dist"]
+CMD ["serve", "-s", "dist", "-l", "tcp://${HOST:-0.0.0.0}:8000"]
