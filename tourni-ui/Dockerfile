@@ -16,6 +16,8 @@ RUN npm install
 # Copy the rest of your app's source code
 COPY . .
 
+ARG BUILD_MODE
+
 # Build your app for the specified build mode
 RUN npm run build:${BUILD_MODE}
 

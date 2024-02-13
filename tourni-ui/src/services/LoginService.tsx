@@ -19,5 +19,5 @@ export const registerUser = (user: ISignupRequest) => {
     lastName: user.lastName,
   };
 
-  return axios.post(`${API_BASE_URL}/register`, registrationRequest, { headers });
+  return axios.post('/api/v1/auth/register', registrationRequest, { headers });
 };

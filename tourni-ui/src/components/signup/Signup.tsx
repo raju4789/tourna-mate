@@ -33,7 +33,7 @@ const Signup: React.FC = () => {
       }
       const response: AxiosResponse<ICommonApiResponse<IRegisterResponse>> = await registerUser(data);
       const body: ICommonApiResponse<IRegisterResponse> = response.data;
-      if (body.isSuccess) {
+      if (body.success) {
         localStorage.setItem('jwt', body.data.jwt);
         localStorage.setItem('role', body.data.role || '');
         navigate('/pointsTable');
