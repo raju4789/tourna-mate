@@ -5,8 +5,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-const API_BASE_URL: string = import.meta.env ? import.meta.env.VITE_REACT_APP_API_URL || 'http://localhost:8080' : 'http://localhost:8080';
-const UI_PORT: number = import.meta.env ? import.meta.env.VITE_REACT_APP_UI_PORT || 8001 : 8001;
+const API_BASE_URL = window.env.API_BASE_URL || 'http://localhost:8080';
+const UI_PORT = window.env.UI_PORT || 8001;
 
 console.log('API_BASE_URL: ', API_BASE_URL);
 console.log('UI_PORT: ', UI_PORT);

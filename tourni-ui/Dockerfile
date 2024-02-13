@@ -15,6 +15,8 @@ RUN npm install
 # Copy the rest of your app's source code
 COPY . .
 
+COPY inject-env.js ./
+
 # Copy the entrypoint script into the image
 COPY entrypoint.sh /usr/local/bin/
 
