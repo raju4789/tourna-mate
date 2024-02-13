@@ -26,7 +26,7 @@ const Login: React.FC = () => {
     try {
       const response: AxiosResponse<ICommonApiResponse<ILoginResponse>> = await loginUser(data);
       const body: ICommonApiResponse<ILoginResponse> = response.data;
-      if (body.isSuccess) {
+      if (body.success) {
         localStorage.clear();
         localStorage.setItem('jwt', body.data.jwt);
         localStorage.setItem('role', body.data.role || '');

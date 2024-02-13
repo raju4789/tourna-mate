@@ -26,7 +26,7 @@ export interface IErrorDetails {
 }
 
 export interface ICommonApiResponse<T> {
-  isSuccess: boolean;
+  success: boolean;
   data: T;
   errorDetails: IErrorDetails | null;
 }
