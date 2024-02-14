@@ -148,6 +148,19 @@ services:
     depends_on:
       - tourni-gateway # Assuming tourni-ui depends on tourni-gateway
 
+  nginx:
+    image: nginx:alpine
+    container_name: tourni-nginx
+    volumes:
+      - ./nginx:/etc/nginx/conf.d # Assuming your Nginx configuration files are in the ./nginx directory
+    ports:
+      - "80:80" # Expose Nginx on port 80
+    depends_on:
+      - tourni-ui
+      - tourni-gateway
+    networks:
+      - tourni-network
+
 # Volumes
 volumes:
   mysql-database-data-volume:

@@ -1,38 +1,13 @@
-# Use an official Node runtime as a parent image
-FROM node:18-alpine AS BUILD_IMAGE
-
-# Set the working directory
+# Build stage
+FROM node:16-alpine as build-stage
 WORKDIR /app
-
-# Copy package.json and package-lock.json
-COPY package.json ./
-
-# Install project dependencies
+COPY package*.json ./
 RUN npm install
-
-# Copy the rest of your app's source code
 COPY . .
+RUN npm run build
 
-ARG BUILD_MODE
-
-# Build the project (development mode by default)
-RUN npm run build:${BUILD_MODE}
-
-FROM node:18-alpine AS PRODUCTION_IMAGE
-
-WORKDIR /app
-
-COPY --from=BUILD_IMAGE /app/dist/ /app/dist/
-
-COPY package.json ./
-
-COPY vite.config.ts ./
-
-RUN npm install typescript
-
-EXPOSE 8000
-
-CMD ["npm", "run", "preview"]
-
-
-
+# Production stage
+FROM nginx:stable-alpine as production-stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
