@@ -1,13 +1,29 @@
-# Build stage
-FROM node:16-alpine as build-stage
+# Use an official Node runtime as a parent image
+FROM node:18-alpine AS BUILD_IMAGE
+
+# Set the working directory
 WORKDIR /app
-COPY package*.json ./
+
+# Copy package.json and package-lock.json
+COPY package.json ./
+
+# Install project dependencies
 RUN npm install
+
+# Copy the rest of your app's source code
 COPY . .
-RUN npm run build
+
+ARG BUILD_MODE
+
+# Build the project (development mode by default)
+RUN npm run build:${BUILD_MODE}
 
 # Production stage
 FROM nginx:stable-alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+COPY --from=BUILD_IMAGE /app/dist /usr/share/nginx/html
+COPY ../nginx/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
+
+
+
