@@ -17,15 +17,15 @@ export default ({ mode }: ConfigEnv) => {
     plugins: [react()],
     preview: {
       host: true,
-      port: VITE_UI_PORT,
+      port: 8000,
     },
     server: {
-      port: VITE_UI_PORT,
+      port: 8000,
       host: true,
       strictPort: true,
       proxy: {
         '/api/v1': {
-          target: VITE_API_URL, // The backend server
+          target: 'https://tourni-gateway:8080', // The backend server
           changeOrigin: true, // Needed for virtual hosted sites
           secure: false, // Set to true if your backend is served over HTTPS
         },
