@@ -15,8 +15,14 @@ export default ({ mode }: ConfigEnv) => {
 
   return defineConfig({
     plugins: [react()],
+    preview: {
+      host: true,
+      port: VITE_UI_PORT,
+    },
     server: {
       port: VITE_UI_PORT,
+      host: true,
+      strictPort: true,
       proxy: {
         '/api/v1': {
           target: VITE_API_URL, // The backend server

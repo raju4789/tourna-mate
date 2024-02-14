@@ -1,14 +1,11 @@
 # Use an official Node runtime as a parent image
-FROM node:18.19.0-slim
+FROM node:18-alpine AS BUILD_IMAGE
 
 # Set the working directory
 WORKDIR /app
 
-# Define the build argument for the build mode
-ARG BUILD_MODE
-
 # Copy package.json and package-lock.json
-COPY package*.json ./
+COPY package.json ./
 
 # Install project dependencies
 RUN npm install
@@ -16,18 +13,26 @@ RUN npm install
 # Copy the rest of your app's source code
 COPY . .
 
-# Build your app for the specified build mode
+ARG BUILD_MODE
+
+# Build the project (development mode by default)
 RUN npm run build:${BUILD_MODE}
 
-# Expose port 8000
+FROM node:18-alpine AS PRODUCTION_IMAGE
+
+WORKDIR /app
+
+COPY --from=BUILD_IMAGE /app/dist/ /app/dist/
+
+COPY package.json ./
+
+COPY vite.config.ts ./
+
+RUN npm install typescript
+
 EXPOSE 8000
 
-# Install a simple http server for serving static content
-RUN npm install -g serve
+CMD ["npm", "run", "preview"]
 
-# Consider running your application as a non-root user for security
-# RUN adduser -D myuser
-# USER myuser
 
-# Start the server using the build directory
-CMD ["serve", "-s", "dist", "-l", "tcp://${HOST:-0.0.0.0}:8000"]
+
