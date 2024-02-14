@@ -141,8 +141,6 @@ services:
   tourni-ui: # New service for tourni-ui React.js project
     image: raju5800/tourni-ui:latest # Replace with the image name for your tourni-ui project
     container_name: tourni-ui
-    ports:
-      - "8000:80"
     networks:
       - tourni-network
     depends_on:
@@ -153,7 +151,7 @@ services:
     container_name: tourni-nginx
     restart: always
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./tourni-ui/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "8000:80"
     networks:
