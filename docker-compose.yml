@@ -142,7 +142,7 @@ services:
     image: raju5800/tourni-ui:latest # Replace with the image name for your tourni-ui project
     container_name: tourni-ui
     ports:
-      - "8000:8000" # Assuming your React.js app runs on port 3000
+      - "8000:80"
     networks:
       - tourni-network
     depends_on:
