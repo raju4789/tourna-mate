@@ -9,12 +9,12 @@ import react from '@vitejs/plugin-react';
 export default () => defineConfig({
   plugins: [react()],
   server: {
-    port: 8000,
+    port: 8001,
     host: true,
     strictPort: true,
     proxy: {
-      '/api': {
-        target: 'https://tourni-gateway:8080', // The backend server
+      '/api/v1': {
+        target: 'http://localhost:8080', // The backend server
         changeOrigin: true, // Needed for virtual hosted sites
         secure: false, // Set to true if your backend is served over HTTPS
       },

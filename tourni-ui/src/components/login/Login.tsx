@@ -1,45 +1,25 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import {
   FormControlLabel, Grid, Typography, Checkbox,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useNavigate } from 'react-router';
+import { useOutletContext } from 'react-router';
 import { Link } from 'react-router-dom';
-import { AxiosResponse } from 'axios';
 import {
   StyledPaper, StyledAvatar, StyledTextField, StyledButton,
 } from './Login.styled';
 import {
-  ICommonApiResponse, IErrorDetails, ILoginRequest, ILoginResponse,
+  IAppOutletContext,
+  ILoginRequest,
 } from '../../types/Types';
-import { loginUser } from '../../services/LoginService';
 
 const Login: React.FC = () => {
-  const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
+  const { onLogin, apiErrorMessage } = useOutletContext<IAppOutletContext>();
+
   const { register, handleSubmit, formState: { errors } } = useForm<ILoginRequest>({
     mode: 'onTouched',
   });
-
-  const onSubmit = async (data: ILoginRequest) => {
-    try {
-      const response: AxiosResponse<ICommonApiResponse<ILoginResponse>> = await loginUser(data);
-      const body: ICommonApiResponse<ILoginResponse> = response.data;
-      if (body.success) {
-        localStorage.clear();
-        localStorage.setItem('jwt', body.data.jwt);
-        localStorage.setItem('role', body.data.role || '');
-        navigate('/pointsTable');
-      } else {
-        const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
-        setErrorMessage(`Login failed with error: ${errorDetails.errorMessage}. Please try again.`);
-      }
-    } catch (error) {
-      console.error('Login failed ', error);
-      setErrorMessage('Login failed with unknown error. Please try again.');
-    }
-  };
 
   return (
     <Grid container justifyContent="center" alignItems="center" style={{ height: '100vh', width: '100%' }}>
@@ -50,7 +30,7 @@ const Login: React.FC = () => {
           </StyledAvatar>
           <Typography variant="h5">Login</Typography>
         </Grid>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onLogin)}>
           <StyledTextField
             label="Username"
             placeholder="Enter username"
@@ -83,7 +63,7 @@ const Login: React.FC = () => {
           </StyledButton>
         </form>
         <Typography style={{ margin: 7, color: 'red' }} variant="body1">
-          {errorMessage}
+          {apiErrorMessage}
         </Typography>
         <Typography>
           Do you have an account?

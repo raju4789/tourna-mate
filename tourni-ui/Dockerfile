@@ -13,13 +13,6 @@ RUN npm install
 # Copy the rest of your app's source code
 COPY . .
 
-ARG BUILD_MODE=production
+EXPOSE 8000
 
-# Build the project (development mode by default)
-RUN npm run build:${BUILD_MODE}
-
-# Production stage
-FROM nginx:stable-alpine as production-stage
-COPY --from=BUILD_IMAGE /app/dist /usr/share/nginx/html
-COPY ./nginx/nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+CMD ["npm", "run", "dev"]

@@ -1,19 +1,18 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import {
   StyledAppBar, StyledToolbar, StyledTypography, StyledButton,
 } from './Header.styled';
+import { IHeaderProps } from '../../types/Types';
 
-const Header: React.FC = () => {
+const Header: React.FC<IHeaderProps> = (props) => {
   const navigate = useNavigate();
+  const {
+    onLogout, isAuthenticated, userName, roles,
+  } = props;
 
-  const isAuthenticated: boolean = localStorage.getItem('jwt') !== null;
-
-  const userName = localStorage.getItem('userName');
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
+  const onManageClick = () => {
+    navigate('/manageTournament');
   };
 
   return (
@@ -29,11 +28,20 @@ const Header: React.FC = () => {
             {userName}
           </StyledTypography>
         ) : null}
+        {roles?.includes('admin') ? (
+          <StyledButton
+            color="secondary"
+            variant="outlined"
+            onClick={onManageClick}
+          >
+            Manage
+          </StyledButton>
+        ) : null}
         {isAuthenticated ? (
           <StyledButton
             color="secondary"
             variant="outlined"
-            onClick={handleLogout}
+            onClick={onLogout}
           >
             Logout
           </StyledButton>

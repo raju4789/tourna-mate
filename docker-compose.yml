@@ -94,9 +94,9 @@ services:
       EUREKA.CLIENT.FETCH-REGISTRY: true
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
 
-  points-table-tracker:
-    image: raju5800/points-table-tracker:latest
-    container_name: points-table-tracker
+  tourni-manager:
+    image: raju5800/tourni-manager:latest
+    container_name: tourni-manager
     pull_policy: always
     ports:
       - "8083:8080"
@@ -141,23 +141,11 @@ services:
   tourni-ui: # New service for tourni-ui React.js project
     image: raju5800/tourni-ui:latest # Replace with the image name for your tourni-ui project
     container_name: tourni-ui
-    networks:
-      - tourni-network
-    depends_on:
-      - tourni-gateway # Assuming tourni-ui depends on tourni-gateway
-
-  tourni-nginx:
-    image: nginx:1.17.6
-    container_name: tourni-nginx
-    restart: always
-    volumes:
-      - ./tourni-ui/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
     ports:
-      - "8000:80"
+      - "8002:8000"
     networks:
       - tourni-network
     depends_on:
-      - tourni-ui
       - tourni-gateway
 
 # Volumes

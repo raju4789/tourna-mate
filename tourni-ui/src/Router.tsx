@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import Login from './components/login/Login';
 import Signup from './components/signup/Signup';
 import Root from './components/root/Root';
+import ProtectedRoute from './utils/ProtectedRoute';
 
 const router = createBrowserRouter([
   {
@@ -10,7 +11,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Root />,
+        element: <Login />,
       },
       {
         path: 'login',
@@ -23,6 +24,15 @@ const router = createBrowserRouter([
       {
         path: 'pointsTable',
         element: <div> Home </div>,
+      },
+      {
+        element: <ProtectedRoute role="admin" />,
+        children: [
+          {
+            path: 'manageTournament',
+            element: <div> Tournament </div>,
+          },
+        ],
       },
     ],
   },

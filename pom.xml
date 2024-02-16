@@ -18,7 +18,7 @@
         <module>tourni-discovery-service</module>
         <module>tourni-ai</module>
         <module>tourni-identity-service</module>
-        <module>points-table-tracker</module>
+        <module>tourni-manager</module>
         <module>tourni-gateway</module>
     </modules>
 

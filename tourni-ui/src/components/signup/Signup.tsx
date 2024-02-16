@@ -1,51 +1,25 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Grid, Typography, Checkbox, FormControlLabel,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useNavigate } from 'react-router';
-import { Link } from 'react-router-dom';
-import { AxiosResponse } from 'axios';
+import { Link, useOutletContext } from 'react-router-dom';
 import {
   StyledAvatar, StyledButton, StyledPaper, StyledTextField,
 } from './Signup.styled';
 import {
-  ICommonApiResponse, IErrorDetails, IRegisterResponse, ISignupRequest,
+  IAppOutletContext,
+  ISignupRequest,
 } from '../../types/Types';
-import { registerUser } from '../../services/LoginService';
 
 const Signup: React.FC = () => {
-  const [errorMessage, setErrorMessage] = useState('');
-  const navigate = useNavigate();
+  const { onSignup, apiErrorMessage } = useOutletContext<IAppOutletContext>();
+
   const {
     register, handleSubmit, formState: { errors },
   } = useForm<ISignupRequest>({
     mode: 'onTouched', // Validation will trigger on the blur event
   });
-
-  const onSubmit = async (data: ISignupRequest) => {
-    try {
-      const { password, confirmPassword } = data;
-      if (password !== confirmPassword) {
-        setErrorMessage("Passwords don't match");
-        return;
-      }
-      const response: AxiosResponse<ICommonApiResponse<IRegisterResponse>> = await registerUser(data);
-      const body: ICommonApiResponse<IRegisterResponse> = response.data;
-      if (body.success) {
-        localStorage.setItem('jwt', body.data.jwt);
-        localStorage.setItem('role', body.data.role || '');
-        navigate('/pointsTable');
-      } else {
-        const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
-        setErrorMessage(`Registration failed with error ${errorDetails.errorMessage} Please try again.`);
-      }
-    } catch (error) {
-      console.error('Registration failed', error);
-      setErrorMessage('Registration failed with unknown error. Please try again.');
-    }
-  };
 
   return (
     <Grid container justifyContent="center" alignItems="center" style={{ height: '100vh' }}>
@@ -56,7 +30,7 @@ const Signup: React.FC = () => {
           </StyledAvatar>
           <Typography variant="h5">Signup</Typography>
         </Grid>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSignup)}>
           <StyledTextField
             label="First name"
             placeholder="Enter First name"
@@ -139,7 +113,7 @@ const Signup: React.FC = () => {
           </StyledButton>
         </form>
         <Typography style={{ margin: 7, color: 'red' }} variant="body1">
-          {errorMessage}
+          {apiErrorMessage}
         </Typography>
         <Typography>
           Do you have an account?

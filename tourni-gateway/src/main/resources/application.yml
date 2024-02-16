@@ -27,10 +27,10 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        - id: points-table-tracker
-          uri: lb://points-table-tracker
+        - id: tourni-manager
+          uri: lb://tourni-manager
           predicates:
-            - Path=/api/v1/pointsTable/**
+            - Path=/api/v1/tournimanager/**
           filters:
             - AuthenticationFilter
         - id: tourni-ai

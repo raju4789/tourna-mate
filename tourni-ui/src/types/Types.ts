@@ -41,9 +41,31 @@ export interface IRegisterResponse {
   role?: string;
 }
 
-export interface AppEnv {
-  env: {
-    API_BASE_URL?: string;
-    UI_PORT?: string;
-  };
+export interface IAppOutletContext {
+  userName: string;
+  jwt: string;
+  isAuthenticated: boolean;
+  roles: string[];
+  onLogin: (data: ILoginRequest) => Promise<void>;
+  onSignup: (data: ISignupRequest) => Promise<void>;
+  onLogout: () => void;
+  apiErrorMessage: string;
+}
+
+export interface IHeaderProps {
+  onLogout: () => void;
+  isAuthenticated: boolean;
+  userName: string;
+  roles?: string[];
+}
+
+export interface IPoinstableResponse {
+  teamName: string;
+  played: number;
+  won: number;
+  lost: number;
+  tied: number;
+  noResult: number;
+  points: number;
+  netMatchRate: number;
 }
