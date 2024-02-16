@@ -11,26 +11,17 @@ spring:
     name: tourni-gateway
   cloud:
     gateway:
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - PATCH
-              - OPTIONS
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
       routes:
         - id: tourni-manager
-          uri: lb://tourni-manager
+          uri: http://tourni-manager
           predicates:
-            - Path=/api/v1/tournimanager/**
+            - Path=/api/v1/tournimanager/pointstable/tournament/**
+            - Path=/api/v1/tournimanager/teams
+            - Path=/api/v1/tournimanager/tournaments
           filters:
             - AuthenticationFilter
         - id: tourni-ai
