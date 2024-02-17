@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Box, Typography, MenuItem, Select, InputLabel,
+  Box, Typography, MenuItem, Select, InputLabel, FormControl,
 } from '@mui/material';
 
 import { DataGrid } from '@mui/x-data-grid';
@@ -11,10 +11,10 @@ import {
 import { getPointsTable, getAllTournaments } from '../../services/TournamentService';
 
 const PointsTable: React.FC = () => {
-  const [apiErrorMessage, setAPIErrorMessage] = React.useState<string>('');
-  const [pointsTable, setPointsTable] = React.useState<IPointstable[]>([]);
-  const [tournaments, setTournaments] = React.useState<ITournament[]>([]);
-  const [selectedTournament, setSelectedTournament] = React.useState<ITournament | null>(null);
+  const [apiErrorMessage, setAPIErrorMessage] = useState<string>('');
+  const [pointsTable, setPointsTable] = useState<IPointstable[]>([]);
+  const [tournaments, setTournaments] = useState<ITournament[]>([]);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
 
   const columns = useMemo(() => [
     { field: 'teamName', headerName: 'Team Name', width: 130 },
@@ -27,101 +27,88 @@ const PointsTable: React.FC = () => {
     { field: 'netMatchRate', headerName: 'NRR', width: 100 },
   ], []);
 
-  const getTournamentPointsTable = async (tournamentId: number) => {
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const response: AxiosResponse<ICommonApiResponse<ITournament[]>> = await getAllTournaments();
+        const body: ICommonApiResponse<ITournament[]> = response.data;
+        if (body.success) {
+          const responseTournaments: ITournament[] = body.data;
+          if (responseTournaments.length > 0) {
+            const { tournamentId } = responseTournaments[0];
+            setSelectedTournamentId(tournamentId);
+            setTournaments(responseTournaments);
+            fetchPointsTable(tournamentId);
+          } else {
+            setAPIErrorMessage('No tournaments found.');
+          }
+        } else {
+          const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'Unknown error' };
+          setAPIErrorMessage(`Failed to get tournaments: ${errorDetails.errorMessage}`);
+        }
+      } catch (error) {
+        setAPIErrorMessage('Failed to get tournaments with an unknown error. Please try again later.');
+      }
+    };
+
+    fetchTournaments();
+  }, []);
+
+  const fetchPointsTable = async (tournamentId: number) => {
     try {
       const response: AxiosResponse<ICommonApiResponse<IPointsTableResponse>> = await getPointsTable(tournamentId);
-      const body:ICommonApiResponse<IPointsTableResponse> = response.data;
+      const body: ICommonApiResponse<IPointsTableResponse> = response.data;
       if (body.success) {
         setPointsTable(body.data.pointsTable);
       } else {
-        const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
-        console.error('Failed to get points table', errorDetails);
-        setAPIErrorMessage(`Failed to get points table with error: ${errorDetails.errorMessage}. Please try again.`);
+        const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'Unknown error' };
+        setAPIErrorMessage(`Failed to get points table: ${errorDetails.errorMessage}`);
       }
     } catch (error) {
-      console.error('Failed to get points table', error);
-      setAPIErrorMessage('Failed to get points table with unknown error. Please try again.');
-    }
-  };
-
-  const getAllTournamentsNames = async () => {
-    try {
-      const response: AxiosResponse<ICommonApiResponse<ITournament[]>> = await getAllTournaments();
-      const body:ICommonApiResponse<ITournament[]> = response.data;
-      if (body.success) {
-        const responseTournaments: ITournament[] = body.data;
-        const { tournamentId: firstTournamentId } = responseTournaments[0];
-        setSelectedTournament(responseTournaments[0]);
-        setTournaments(responseTournaments);
-        getTournamentPointsTable(firstTournamentId);
-      } else {
-        const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
-        console.error('Failed to get tournaments', errorDetails);
-        setAPIErrorMessage(`Failed to get tournaments with error: ${errorDetails.errorMessage}. Please try again.`);
-      }
-    } catch (error) {
-      console.error('Failed to get tournaments', error);
-      setAPIErrorMessage('Failed to get tournaments with unknown error. Please try again.');
+      setAPIErrorMessage('Failed to get points table with unknown error. Please try again later.');
     }
   };
 
   const handleTournamentChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    const currentSelectedTournamentName = event.target.value as string;
-    const currentSelectedTournament: ITournament | undefined = tournaments.find((tournament) => tournament.tournamentName === currentSelectedTournamentName);
-    setSelectedTournament(currentSelectedTournament!);
-    getTournamentPointsTable(currentSelectedTournament!.tournamentId);
+    const tournamentId = event.target.value as number;
+    setSelectedTournamentId(tournamentId);
+    fetchPointsTable(tournamentId);
   };
 
-  React.useEffect(() => {
-    getAllTournamentsNames();
-  }, []);
-
   return (
-    <Box
-      sx={{
-        height: 800,
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <Typography
-        variant="h5"
-        component="h3"
-        sx={{ textAlign: 'center', mt: 3, mb: 3 }}
-      >
-        {apiErrorMessage}
-      </Typography>
-      <Typography
-        variant="h5"
-        component="h3"
-        sx={{ textAlign: 'center', mt: 3, mb: 3 }}
-      >
+    <Box sx={{ height: 800, width: '100%' }}>
+      {apiErrorMessage && (
+        <Typography variant="h6" color="error" gutterBottom>
+          {apiErrorMessage}
+        </Typography>
+      )}
+      <Typography variant="h5" component="h3" sx={{ textAlign: 'center', mt: 3, mb: 3 }}>
         Points Table
       </Typography>
-      <>
-        <InputLabel>Select tournament name</InputLabel>
+      <FormControl fullWidth margin="normal">
+        <InputLabel id="tournament-select-label">Select Tournament</InputLabel>
         <Select
-          labelId="demo-simple-select-label"
-          id="demo-simple-select"
-          value={selectedTournament?.tournamentName || ''}
-          label="Select an option"
+          labelId="tournament-select-label"
+          id="tournament-select"
+          value={selectedTournamentId || ''}
+          label="Select Tournament"
           onChange={handleTournamentChange}
         >
-          {tournaments.map((option) => (
-            <MenuItem key={String(option.tournamentId)} value={option.tournamentName}>
-              {option.tournamentName}
+          {tournaments.map((tournament) => (
+            <MenuItem key={tournament.tournamentId} value={tournament.tournamentId}>
+              {tournament.tournamentName}
             </MenuItem>
           ))}
         </Select>
-      </>
-      {(pointsTable && pointsTable.length > 0) && (
+      </FormControl>
+      {pointsTable.length > 0 && (
         <DataGrid
           columns={columns}
           rows={pointsTable}
-          getRowId={(row) => row.teamName}
+          getRowId={(row) => row.teamId}
+          autoHeight
+          pageSize={5}
+          rowsPerPageOptions={[5, 10, 20]}
         />
       )}
     </Box>
