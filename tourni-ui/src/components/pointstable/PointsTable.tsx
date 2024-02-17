@@ -1,13 +1,20 @@
 import React, { useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import {
+  Box, Typography, MenuItem, Select, InputLabel,
+} from '@mui/material';
+
 import { DataGrid } from '@mui/x-data-grid';
 import { AxiosResponse } from 'axios';
-import { ICommonApiResponse, IPoinstableResponse } from '../../types/Types';
-import getPointsTable from '../../services/TournamentService';
+import {
+  ICommonApiResponse, IPointsTableResponse, IPointstable, ITournament,
+} from '../../types/Types';
+import { getPointsTable, getAllTournaments } from '../../services/TournamentService';
 
 const PointsTable: React.FC = () => {
   const [apiErrorMessage, setAPIErrorMessage] = React.useState<string>('');
-  const [pointsTable, setPointsTable] = React.useState<IPoinstableResponse[]>([]);
+  const [pointsTable, setPointsTable] = React.useState<IPointstable[]>([]);
+  const [tournaments, setTournaments] = React.useState<ITournament[]>([]);
+  const [selectedTournament, setSelectedTournament] = React.useState<ITournament | null>(null);
 
   const columns = useMemo(() => [
     { field: 'teamName', headerName: 'Team Name', width: 130 },
@@ -22,10 +29,10 @@ const PointsTable: React.FC = () => {
 
   const getTournamentPointsTable = async (tournamentId: number) => {
     try {
-      const response: AxiosResponse<ICommonApiResponse<IPoinstableResponse[]>> = await getPointsTable(tournamentId);
-      const body:ICommonApiResponse<IPoinstableResponse[]> = response.data;
+      const response: AxiosResponse<ICommonApiResponse<IPointsTableResponse>> = await getPointsTable(tournamentId);
+      const body:ICommonApiResponse<IPointsTableResponse> = response.data;
       if (body.success) {
-        setPointsTable(body.data);
+        setPointsTable(body.data.pointsTable);
       } else {
         const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
         console.error('Failed to get points table', errorDetails);
@@ -37,18 +44,47 @@ const PointsTable: React.FC = () => {
     }
   };
 
+  const getAllTournamentsNames = async () => {
+    try {
+      const response: AxiosResponse<ICommonApiResponse<ITournament[]>> = await getAllTournaments();
+      const body:ICommonApiResponse<ITournament[]> = response.data;
+      if (body.success) {
+        const responseTournaments: ITournament[] = body.data;
+        const { tournamentId: firstTournamentId } = responseTournaments[0];
+        setSelectedTournament(responseTournaments[0]);
+        setTournaments(responseTournaments);
+        getTournamentPointsTable(firstTournamentId);
+      } else {
+        const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
+        console.error('Failed to get tournaments', errorDetails);
+        setAPIErrorMessage(`Failed to get tournaments with error: ${errorDetails.errorMessage}. Please try again.`);
+      }
+    } catch (error) {
+      console.error('Failed to get tournaments', error);
+      setAPIErrorMessage('Failed to get tournaments with unknown error. Please try again.');
+    }
+  };
+
+  const handleTournamentChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    const currentSelectedTournamentName = event.target.value as string;
+    const currentSelectedTournament: ITournament | undefined = tournaments.find((tournament) => tournament.tournamentName === currentSelectedTournamentName);
+    setSelectedTournament(currentSelectedTournament!);
+    getTournamentPointsTable(currentSelectedTournament!.tournamentId);
+  };
+
   React.useEffect(() => {
-    getTournamentPointsTable(101);
+    getAllTournamentsNames();
   }, []);
+
   return (
     <Box
       sx={{
         height: 800,
-        width: '100%', // Set width to 100%
-        display: 'flex', // Use flexbox
-        flexDirection: 'column', // Align items vertically
-        justifyContent: 'center', // Center align items horizontally
-        alignItems: 'center', // Center align items vertically
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <Typography
@@ -65,11 +101,29 @@ const PointsTable: React.FC = () => {
       >
         Points Table
       </Typography>
-      <DataGrid
-        columns={columns}
-        rows={pointsTable}
-        getRowId={(row) => row.teamName}
-      />
+      <>
+        <InputLabel>Select tournament name</InputLabel>
+        <Select
+          labelId="demo-simple-select-label"
+          id="demo-simple-select"
+          value={selectedTournament?.tournamentName || ''}
+          label="Select an option"
+          onChange={handleTournamentChange}
+        >
+          {tournaments.map((option) => (
+            <MenuItem key={String(option.tournamentId)} value={option.tournamentName}>
+              {option.tournamentName}
+            </MenuItem>
+          ))}
+        </Select>
+      </>
+      {(pointsTable && pointsTable.length > 0) && (
+        <DataGrid
+          columns={columns}
+          rows={pointsTable}
+          getRowId={(row) => row.teamName}
+        />
+      )}
     </Box>
   );
 };

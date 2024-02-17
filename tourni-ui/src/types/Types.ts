@@ -59,7 +59,12 @@ export interface IHeaderProps {
   roles?: string[];
 }
 
-export interface IPoinstableResponse {
+export interface IPointsTableResponse {
+  tournamentId: number;
+  pointsTable: IPointstable[];
+}
+
+export interface IPointstable {
   teamName: string;
   played: number;
   won: number;
@@ -68,4 +73,14 @@ export interface IPoinstableResponse {
   noResult: number;
   points: number;
   netMatchRate: number;
+}
+
+export interface ITournament {
+  tournamentId: number;
+  tournamentName: string;
+}
+
+export interface DropdownOption {
+  value: string;
+  label: string;
 }
