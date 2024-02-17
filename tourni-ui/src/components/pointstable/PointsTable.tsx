@@ -1,20 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Box, Typography, MenuItem, Select, InputLabel, FormControl,
-} from '@mui/material';
-
+import { Box, Typography, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { AxiosResponse } from 'axios';
-import {
-  ICommonApiResponse, IPointsTableResponse, IPointstable, ITournament,
-} from '../../types/Types';
+import { IPointsTableResponse, IPointstable, ITournament } from '../../types/Types';
 import { getPointsTable, getAllTournaments } from '../../services/TournamentService';
 
 const PointsTable: React.FC = () => {
   const [apiErrorMessage, setAPIErrorMessage] = useState<string>('');
   const [pointsTable, setPointsTable] = useState<IPointstable[]>([]);
   const [tournaments, setTournaments] = useState<ITournament[]>([]);
-  const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<number | ''>('');
 
   const columns = useMemo(() => [
     { field: 'teamName', headerName: 'Team Name', width: 130 },
@@ -27,54 +21,42 @@ const PointsTable: React.FC = () => {
     { field: 'netMatchRate', headerName: 'NRR', width: 100 },
   ], []);
 
+  // Effect for fetching all tournaments on mount
   useEffect(() => {
-    const fetchTournaments = async () => {
-      try {
-        const response: AxiosResponse<ICommonApiResponse<ITournament[]>> = await getAllTournaments();
-        const body: ICommonApiResponse<ITournament[]> = response.data;
-        if (body.success) {
-          const responseTournaments: ITournament[] = body.data;
-          if (responseTournaments.length > 0) {
-            const { tournamentId } = responseTournaments[0];
-            setSelectedTournamentId(tournamentId);
-            setTournaments(responseTournaments);
-            fetchPointsTable(tournamentId);
-          } else {
-            setAPIErrorMessage('No tournaments found.');
-          }
-        } else {
-          const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'Unknown error' };
-          setAPIErrorMessage(`Failed to get tournaments: ${errorDetails.errorMessage}`);
-        }
-      } catch (error) {
-        setAPIErrorMessage('Failed to get tournaments with an unknown error. Please try again later.');
+    getAllTournaments().then(response => {
+      const tournamentsData = response.data.data; // This path might need to be adjusted based on your actual API response
+      setTournaments(tournamentsData);
+      if (tournamentsData.length > 0) {
+        const firstTournamentId = tournamentsData[0].tournamentId;
+        setSelectedTournamentId(firstTournamentId);
+        fetchPointsTable(firstTournamentId);
       }
-    };
-
-    fetchTournaments();
+    }).catch(error => {
+      setAPIErrorMessage('Error fetching tournaments. Please try again later.');
+      console.error('Error fetching tournaments:', error);
+    });
   }, []);
 
-  const fetchPointsTable = async (tournamentId: number) => {
-    try {
-      const response: AxiosResponse<ICommonApiResponse<IPointsTableResponse>> = await getPointsTable(tournamentId);
-      const body: ICommonApiResponse<IPointsTableResponse> = response.data;
-      if (body.success) {
-        setPointsTable(body.data.pointsTable);
-      } else {
-        const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'Unknown error' };
-        setAPIErrorMessage(`Failed to get points table: ${errorDetails.errorMessage}`);
-      }
-    } catch (error) {
-      setAPIErrorMessage('Failed to get points table with unknown error. Please try again later.');
-    }
+  // Function for fetching points table for a given tournament
+  const fetchPointsTable = (tournamentId: number) => {
+    getPointsTable(tournamentId).then(response => {
+      const pointsTableData = response.data.data.pointsTable; // This path might need to be adjusted based on your actual API response
+      setPointsTable(pointsTableData);
+    }).catch(error => {
+      setAPIErrorMessage('Error fetching points table data. Please try again later.');
+      console.error('Error fetching points table data:', error);
+    });
   };
 
+  // Event handler for tournament selection change
   const handleTournamentChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     const tournamentId = event.target.value as number;
     setSelectedTournamentId(tournamentId);
+    setPointsTable([]); // Clear points table before fetching new one
     fetchPointsTable(tournamentId);
   };
 
+  // PointsTable component layout
   return (
     <Box sx={{ height: 800, width: '100%' }}>
       {apiErrorMessage && (
@@ -90,11 +72,11 @@ const PointsTable: React.FC = () => {
         <Select
           labelId="tournament-select-label"
           id="tournament-select"
-          value={selectedTournamentId || ''}
+          value={selectedTournamentId}
           label="Select Tournament"
           onChange={handleTournamentChange}
         >
-          {tournaments.map((tournament) => (
+          {tournaments.map((tournament: ITournament) => (
             <MenuItem key={tournament.tournamentId} value={tournament.tournamentId}>
               {tournament.tournamentName}
             </MenuItem>

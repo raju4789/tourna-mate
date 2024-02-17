@@ -1,5 +1,14 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
+import { ICommonApiResponse, IPointsTableResponse, ITournament } from '../types/Types';
 
-export const getPointsTable = (tournamentId: number) => axios.get(`/api/v1/manage/pointstable/tournament/${tournamentId}`);
+const axiosInstance = axios.create({
+  baseURL: '/api/v1/manage',
+});
 
-export const getAllTournaments = () => axios.get('/api/v1/manage/tournaments');
+export const getPointsTable = (tournamentId: number): Promise<AxiosResponse<ICommonApiResponse<IPointsTableResponse>>> => {
+  return axiosInstance.get(`/pointstable/tournament/${tournamentId}`);
+};
+
+export const getAllTournaments = (): Promise<AxiosResponse<ICommonApiResponse<ITournament[]>>> => {
+  return axiosInstance.get('/tournaments');
+};
