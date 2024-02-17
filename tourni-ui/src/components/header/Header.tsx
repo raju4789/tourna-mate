@@ -3,13 +3,23 @@ import { useNavigate } from 'react-router';
 import {
   StyledAppBar, StyledToolbar, StyledTypography, StyledButton,
 } from './Header.styled';
-import { IHeaderProps } from '../../types/Types';
+import usePersistedState from '../../hooks/usePersistedState';
 
-const Header: React.FC<IHeaderProps> = (props) => {
+const Header: React.FC = () => {
   const navigate = useNavigate();
-  const {
-    onLogout, isAuthenticated, userName, roles,
-  } = props;
+
+  const [, setJwt] = usePersistedState('jwt', '');
+  const [isAuthenticated, setIsAuthenticated] = usePersistedState('isAuthenticated', false);
+  const [userName, setUserName] = usePersistedState('username', '');
+  const [roles, setRoles] = usePersistedState('roles', ['admin']);
+
+  const onLogout = () => {
+    setJwt('');
+    setIsAuthenticated(false);
+    setRoles([]);
+    setUserName('');
+    navigate('/login');
+  };
 
   const onManageClick = () => {
     navigate('/manageTournament');
@@ -28,7 +38,7 @@ const Header: React.FC<IHeaderProps> = (props) => {
             {userName}
           </StyledTypography>
         ) : null}
-        {roles?.includes('admin') ? (
+        {isAuthenticated && roles?.includes('admin') ? (
           <StyledButton
             color="secondary"
             variant="outlined"

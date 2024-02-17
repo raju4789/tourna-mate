@@ -23,12 +23,6 @@ public class TourniManagementController {
 
     private final TourniManagementService tourniManagementService;
 
-    @GetMapping("/test")
-    public String test() {
-        log.info("TestController.test() called");
-        return "Hello World!";
-    }
-
     @Operation(
             description = "Get endpoint to retrieve points table by tournament id",
             summary = "Get points table by tournament id",

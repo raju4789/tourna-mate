@@ -4,18 +4,52 @@ import {
   FormControlLabel, Grid, Typography, Checkbox,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useOutletContext } from 'react-router';
+import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
+import { AxiosResponse } from 'axios';
 import {
   StyledPaper, StyledAvatar, StyledTextField, StyledButton,
 } from './Login.styled';
 import {
-  IAppOutletContext,
+  ICommonApiResponse,
+  IErrorDetails,
   ILoginRequest,
+  ILoginResponse,
 } from '../../types/Types';
+import { loginUser } from '../../services/LoginService';
+import usePersistedState from '../../hooks/usePersistedState';
 
 const Login: React.FC = () => {
-  const { onLogin, apiErrorMessage } = useOutletContext<IAppOutletContext>();
+  const [apiErrorMessage, setAPIErrorMessage] = React.useState<string>('');
+  const [, setJwt] = usePersistedState('jwt', '');
+  const [, setIsAuthenticated] = usePersistedState('isAuthenticated', false);
+  const [, setUserName] = usePersistedState('username', '');
+  const [, setRoles] = usePersistedState('roles', ['admin']);
+
+  const navigate = useNavigate();
+
+  const onLogin = async (data: ILoginRequest) => {
+    try {
+      const response: AxiosResponse<ICommonApiResponse<ILoginResponse>> = await loginUser(data);
+      const body: ICommonApiResponse<ILoginResponse> = response.data;
+      if (body.success) {
+        setJwt(body.data.jwt);
+        setUserName(data.username);
+        setIsAuthenticated(true);
+        setRoles([body.data.role]);
+
+        navigate('/pointsTable');
+      } else {
+        setIsAuthenticated(false);
+        const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
+        setAPIErrorMessage(`Login failed with error: ${errorDetails.errorMessage}. Please try again.`);
+      }
+    } catch (error) {
+      console.error('Login failed ', error);
+      setIsAuthenticated(false);
+      setAPIErrorMessage('Login failed with unknown error. Please try again.');
+    }
+  };
 
   const { register, handleSubmit, formState: { errors } } = useForm<ILoginRequest>({
     mode: 'onTouched',

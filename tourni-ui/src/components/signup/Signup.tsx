@@ -1,25 +1,60 @@
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Grid, Typography, Checkbox, FormControlLabel,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { AxiosResponse } from 'axios';
 import {
   StyledAvatar, StyledButton, StyledPaper, StyledTextField,
 } from './Signup.styled';
 import {
-  IAppOutletContext,
+  ICommonApiResponse,
+  IErrorDetails,
+  IRegisterResponse,
   ISignupRequest,
 } from '../../types/Types';
+import usePersistedState from '../../hooks/usePersistedState';
+import { registerUser } from '../../services/LoginService';
 
 const Signup: React.FC = () => {
-  const { onSignup, apiErrorMessage } = useOutletContext<IAppOutletContext>();
-
+  const navigate = useNavigate();
+  const [apiErrorMessage, setAPIErrorMessage] = React.useState<string>('');
+  const [, setJwt] = usePersistedState('jwt', '');
+  const [, setIsAuthenticated] = usePersistedState('isAuthenticated', false);
+  const [, setUserName] = usePersistedState('username', '');
+  const [, setRoles] = usePersistedState('roles', ['admin']);
   const {
     register, handleSubmit, formState: { errors },
   } = useForm<ISignupRequest>({
     mode: 'onTouched', // Validation will trigger on the blur event
   });
+
+  const onSignup = async (data: ISignupRequest) => {
+    try {
+      const { password, confirmPassword } = data;
+      if (password !== confirmPassword) {
+        setAPIErrorMessage("Passwords don't match");
+        return;
+      }
+      const response: AxiosResponse<ICommonApiResponse<IRegisterResponse>> = await registerUser(data);
+      const body: ICommonApiResponse<IRegisterResponse> = response.data;
+      if (body.success) {
+        setUserName(data.username);
+        setJwt(body.data.jwt);
+        setIsAuthenticated(true);
+        setRoles([body.data.role]);
+        navigate('/pointsTable');
+      } else {
+        const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
+        setAPIErrorMessage(`Registration failed with error ${errorDetails.errorMessage} Please try again.`);
+      }
+    } catch (error) {
+      console.error('Registration failed', error);
+      setAPIErrorMessage('Registration failed with unknown error. Please try again.');
+    }
+  };
 
   return (
     <Grid container justifyContent="center" alignItems="center" style={{ height: '100vh' }}>
