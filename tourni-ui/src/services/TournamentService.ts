@@ -1,5 +1,5 @@
 import axios from 'axios';
 
-const getPointsTable = (tournamentId: number) => axios.get(`/api/v1/tournimanager/pointsTable/${tournamentId}`);
+export const getPointsTable = (tournamentId: number) => axios.get(`/api/v1/manage/pointstable/tournament/${tournamentId}`);
 
-export default getPointsTable;
+export const getAllTournaments = () => axios.get('/api/v1/manage/tournaments');

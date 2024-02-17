@@ -13,8 +13,9 @@ const PointsTable: React.FC = () => {
     { field: 'teamName', headerName: 'Team Name', width: 130 },
     { field: 'played', headerName: 'Played', width: 60 },
     { field: 'won', headerName: 'Won', width: 60 },
-    { field: 'drawn', headerName: 'Drawn', width: 60 },
+    { field: 'tied', headerName: 'Tied', width: 60 },
     { field: 'lost', headerName: 'Lost', width: 60 },
+    { field: 'noResult', headerName: 'No Result', width: 100 },
     { field: 'points', headerName: 'Points', width: 60 },
     { field: 'netMatchRate', headerName: 'NRR', width: 100 },
   ], []);
@@ -27,6 +28,7 @@ const PointsTable: React.FC = () => {
         setPointsTable(body.data);
       } else {
         const errorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
+        console.error('Failed to get points table', errorDetails);
         setAPIErrorMessage(`Failed to get points table with error: ${errorDetails.errorMessage}. Please try again.`);
       }
     } catch (error) {
@@ -41,10 +43,21 @@ const PointsTable: React.FC = () => {
   return (
     <Box
       sx={{
-        height: 400,
-        width: '100%',
+        height: 800,
+        width: '100%', // Set width to 100%
+        display: 'flex', // Use flexbox
+        flexDirection: 'column', // Align items vertically
+        justifyContent: 'center', // Center align items horizontally
+        alignItems: 'center', // Center align items vertically
       }}
     >
+      <Typography
+        variant="h5"
+        component="h3"
+        sx={{ textAlign: 'center', mt: 3, mb: 3 }}
+      >
+        {apiErrorMessage}
+      </Typography>
       <Typography
         variant="h5"
         component="h3"
@@ -55,6 +68,7 @@ const PointsTable: React.FC = () => {
       <DataGrid
         columns={columns}
         rows={pointsTable}
+        getRowId={(row) => row.teamName}
       />
     </Box>
   );

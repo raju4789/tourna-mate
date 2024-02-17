@@ -16,14 +16,10 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        - id: tourni-manager
-          uri: http://tourni-manager
+        - id: tourni-management
+          uri: lb://tourni-management
           predicates:
-            - Path=/api/v1/tournimanager/pointstable/tournament/**
-            - Path=/api/v1/tournimanager/teams
-            - Path=/api/v1/tournimanager/tournaments
-          filters:
-            - AuthenticationFilter
+            - Path=/api/v1/manage/**
         - id: tourni-ai
           uri: lb://tourni-ai
           predicates:

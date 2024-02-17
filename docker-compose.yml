@@ -94,9 +94,9 @@ services:
       EUREKA.CLIENT.FETCH-REGISTRY: true
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
 
-  tourni-manager:
-    image: raju5800/tourni-manager:latest
-    container_name: tourni-manager
+  tourni-management:
+    image: raju5800/tourni-management:latest
+    container_name: tourni-management
     pull_policy: always
     ports:
       - "8083:8080"

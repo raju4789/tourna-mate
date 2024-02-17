@@ -3,6 +3,7 @@ import Login from './components/login/Login';
 import Signup from './components/signup/Signup';
 import Root from './components/root/Root';
 import ProtectedRoute from './utils/ProtectedRoute';
+import PointsTable from './components/pointstable/PointsTable';
 
 const router = createBrowserRouter([
   {
@@ -23,7 +24,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'pointsTable',
-        element: <div> Home </div>,
+        element: <PointsTable />,
       },
       {
         element: <ProtectedRoute role="admin" />,
