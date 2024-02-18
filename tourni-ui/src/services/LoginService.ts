@@ -1,6 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import {
-  ILoginRequest, IRegistrationRequest, ISignupRequest,
+  ICommonApiResponse,
+  ILoginRequest, ILoginResponse, IRegisterResponse, IRegistrationRequest, ISignupRequest,
 } from '../types/Types';
 
 const headers = {
@@ -8,9 +9,14 @@ const headers = {
   'Access-Control-Allow-Origin': '*',
 };
 
-export const loginUser = (loginCredentials: ILoginRequest) => axios.post('/api/v1/auth/authenticate', loginCredentials, { headers });
+const axiosInstance = axios.create({
+  baseURL: '/api/v1/auth',
+  headers,
+});
 
-export const registerUser = (user: ISignupRequest) => {
+export const loginUser = (loginCredentials: ILoginRequest): Promise<AxiosResponse<ICommonApiResponse<ILoginResponse>>> => axiosInstance.post('/authenticate', loginCredentials, { headers });
+
+export const registerUser = (user: ISignupRequest): Promise<AxiosResponse<ICommonApiResponse<IRegisterResponse>>> => {
   const registrationRequest: IRegistrationRequest = {
     username: user.username,
     email: user.email,
@@ -19,5 +25,5 @@ export const registerUser = (user: ISignupRequest) => {
     lastName: user.lastName,
   };
 
-  return axios.post('/api/v1/auth/register', registrationRequest, { headers });
+  return axiosInstance.post('/register', registrationRequest, { headers });
 };

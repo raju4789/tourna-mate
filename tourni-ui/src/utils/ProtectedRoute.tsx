@@ -1,17 +1,18 @@
 import React from 'react';
 import {
-  Navigate, Outlet, useOutletContext,
+  Navigate, Outlet,
 } from 'react-router';
-import { IAppOutletContext } from '../types/Types';
+import useLocalStorage from '../hooks/useLocalStorage';
 
 const ProtectedRoute: React.FC<{ role: string }> = ({ role }) => {
-  const context = useOutletContext<IAppOutletContext>();
+  const { getItem: getIsAuthenticated } = useLocalStorage('isAuthenticated');
+  const { getItem: getRole } = useLocalStorage('role');
 
-  if (!context.isAuthenticated || !context.roles.includes(role)) {
+  if (!getIsAuthenticated() || !(getRole() === role)) {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet context={context} />;
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

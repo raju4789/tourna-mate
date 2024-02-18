@@ -1,13 +1,49 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Box, Typography, MenuItem, Select, InputLabel, FormControl,
+  Box, Typography, MenuItem, Select, InputLabel, FormControl, styled,
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { AxiosResponse } from 'axios';
 import {
   ICommonApiResponse, IErrorDetails, IPointsTableResponse, IPointstable, ITournament,
 } from '../../types/Types';
 import { getPointsTable, getAllTournaments } from '../../services/TournamentService';
+
+const Container = styled(Box)(() => ({
+  height: 800,
+  width: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  flexDirection: 'column',
+  justifyContent: 'center',
+}));
+
+const ErrorMessageSection = styled(Typography)(({ theme }) => ({
+  variant: 'h6',
+  color: 'error',
+  marginBottom: theme.spacing(2),
+}));
+
+const PointsTableHeader = styled(Typography)(({ theme }) => ({
+  textAlign: 'center',
+  marginTop: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+}));
+
+const StyledFormControl = styled(FormControl)(({ theme }) => ({
+  display: 'flex',
+  marginTop: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+}));
+
+const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  '& .MuiDataGrid-root': {
+    color: theme.palette.primary.main,
+  },
+  '& .MuiDataGrid-columnsContainer': {
+    backgroundColor: theme.palette.primary.main,
+  },
+}));
 
 const PointsTable: React.FC = () => {
   const [apiErrorMessage, setAPIErrorMessage] = useState<string>('');
@@ -15,7 +51,7 @@ const PointsTable: React.FC = () => {
   const [tournaments, setTournaments] = useState<ITournament[]>([]);
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | ''>('');
 
-  const columns = useMemo(() => [
+  const columns: GridColDef[] = useMemo(() => [
     { field: 'teamName', headerName: 'Team Name', width: 250 },
     { field: 'played', headerName: 'Played', width: 60 },
     { field: 'won', headerName: 'Won', width: 60 },
@@ -28,7 +64,7 @@ const PointsTable: React.FC = () => {
 
   const fetchPointsTable = async (tournamentId: number) => {
     try {
-      const response:AxiosResponse<ICommonApiResponse<IPointsTableResponse>> = await getPointsTable(tournamentId);
+      const response: AxiosResponse<ICommonApiResponse<IPointsTableResponse>> = await getPointsTable(tournamentId);
       const body = response.data;
       if (!body.success) {
         const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
@@ -78,19 +114,16 @@ const PointsTable: React.FC = () => {
   };
 
   return (
-    <Box sx={{
-      height: 800, width: '100%', display: 'flex', alignItems: 'center', flexDirection: 'column', justifyContent: 'center',
-    }}
-    >
+    <Container>
       {apiErrorMessage && (
-        <Typography variant="h6" color="error" gutterBottom>
+        <ErrorMessageSection variant="h6" gutterBottom>
           {apiErrorMessage}
-        </Typography>
+        </ErrorMessageSection>
       )}
-      <Typography variant="h5" component="h3" sx={{ textAlign: 'center', mt: 3, mb: 3 }}>
+      <PointsTableHeader>
         Points Table
-      </Typography>
-      <FormControl sx={{ display: 'flex', mt: 3, mb: 3 }}>
+      </PointsTableHeader>
+      <StyledFormControl>
         <InputLabel>Tournament</InputLabel>
         <Select
           value={selectedTournamentId}
@@ -103,16 +136,16 @@ const PointsTable: React.FC = () => {
             </MenuItem>
           ))}
         </Select>
-      </FormControl>
+      </StyledFormControl>
       {pointsTable && pointsTable.length > 0 && (
-        <DataGrid
+        <StyledDataGrid
           columns={columns}
           rows={pointsTable}
           getRowId={(row) => row.teamName}
           autoHeight
         />
       )}
-    </Box>
+    </Container>
   );
 };
 

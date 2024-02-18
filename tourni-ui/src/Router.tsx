@@ -27,7 +27,7 @@ const router = createBrowserRouter([
         element: <PointsTable />,
       },
       {
-        element: <ProtectedRoute role="admin" />,
+        element: <ProtectedRoute role="ADMIN" />,
         children: [
           {
             path: 'manageTournament',

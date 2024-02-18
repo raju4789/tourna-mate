@@ -7,6 +7,7 @@ const usePersistedState = (key: string, defaultValue: unknown) => {
   });
 
   React.useEffect(() => {
+    console.log(`setting ${key} to ${state}`);
     localStorage.setItem(key, JSON.stringify(state));
   }, [key, state]);
 

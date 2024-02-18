@@ -1,6 +1,5 @@
 package com.tournament.dto.security;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -9,5 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppAuthenticationResponse {
+   String username;
    String token;
+   String role;
 }

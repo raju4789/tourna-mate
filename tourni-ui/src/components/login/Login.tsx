@@ -15,16 +15,17 @@ import {
   IErrorDetails,
   ILoginRequest,
   ILoginResponse,
+  Role,
 } from '../../types/Types';
 import { loginUser } from '../../services/LoginService';
-import usePersistedState from '../../hooks/usePersistedState';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 const Login: React.FC = () => {
   const [apiErrorMessage, setAPIErrorMessage] = React.useState<string>('');
-  const [, setJwt] = usePersistedState('jwt', '');
-  const [, setIsAuthenticated] = usePersistedState('isAuthenticated', false);
-  const [, setUserName] = usePersistedState('username', '');
-  const [, setRoles] = usePersistedState('roles', ['admin']);
+  const { setItem: setJwt } = useLocalStorage('jwt' as string);
+  const { setItem: setIsAuthenticated } = useLocalStorage('isAuthenticated' as string);
+  const { setItem: setUserName } = useLocalStorage('username' as string);
+  const { setItem: setRole } = useLocalStorage('role' as string);
 
   const navigate = useNavigate();
 
@@ -33,20 +34,20 @@ const Login: React.FC = () => {
       const response: AxiosResponse<ICommonApiResponse<ILoginResponse>> = await loginUser(data);
       const body: ICommonApiResponse<ILoginResponse> = response.data;
       if (body.success) {
-        setJwt(body.data.jwt);
-        setUserName(data.username);
-        setIsAuthenticated(true);
-        setRoles([body.data.role]);
+        setJwt(body.data.token as string);
+        setUserName(data.username as string);
+        setIsAuthenticated(true as boolean);
+        setRole(body.data.role as Role);
 
         navigate('/pointsTable');
       } else {
-        setIsAuthenticated(false);
+        setIsAuthenticated(false as boolean);
         const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
         setAPIErrorMessage(`Login failed with error: ${errorDetails.errorMessage}. Please try again.`);
       }
     } catch (error) {
       console.error('Login failed ', error);
-      setIsAuthenticated(false);
+      setIsAuthenticated(false as boolean);
       setAPIErrorMessage('Login failed with unknown error. Please try again.');
     }
   };

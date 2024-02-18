@@ -32,13 +32,15 @@ export interface ICommonApiResponse<T> {
 }
 
 export interface ILoginResponse {
-  jwt: string;
-  role?: string;
+  username: string;
+  token: string;
+  role?: Role;
 }
 
 export interface IRegisterResponse {
-  jwt: string;
-  role?: string;
+  username: string;
+  token: string;
+  role?: Role;
 }
 
 export interface IAppOutletContext {
@@ -84,3 +86,6 @@ export interface DropdownOption {
   value: string;
   label: string;
 }
+
+export type Anchor = 'top' | 'left' | 'bottom' | 'right';
+export enum Role { ADMIN = 'ADMIN', USER = 'USER' }

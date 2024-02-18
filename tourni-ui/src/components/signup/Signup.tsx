@@ -14,17 +14,18 @@ import {
   IErrorDetails,
   IRegisterResponse,
   ISignupRequest,
+  Role,
 } from '../../types/Types';
-import usePersistedState from '../../hooks/usePersistedState';
 import { registerUser } from '../../services/LoginService';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
   const [apiErrorMessage, setAPIErrorMessage] = React.useState<string>('');
-  const [, setJwt] = usePersistedState('jwt', '');
-  const [, setIsAuthenticated] = usePersistedState('isAuthenticated', false);
-  const [, setUserName] = usePersistedState('username', '');
-  const [, setRoles] = usePersistedState('roles', ['admin']);
+  const { setItem: setJwt } = useLocalStorage('jwt');
+  const { setItem: setIsAuthenticated } = useLocalStorage('isAuthenticated' as string);
+  const { setItem: setUserName } = useLocalStorage('username' as string);
+  const { setItem: setRole } = useLocalStorage('role' as string);
   const {
     register, handleSubmit, formState: { errors },
   } = useForm<ISignupRequest>({
@@ -41,12 +42,13 @@ const Signup: React.FC = () => {
       const response: AxiosResponse<ICommonApiResponse<IRegisterResponse>> = await registerUser(data);
       const body: ICommonApiResponse<IRegisterResponse> = response.data;
       if (body.success) {
-        setUserName(data.username);
-        setJwt(body.data.jwt);
-        setIsAuthenticated(true);
-        setRoles([body.data.role]);
+        setUserName(data.username as string);
+        setJwt(body.data.token as string);
+        setIsAuthenticated(true as boolean);
+        setRole(body.data.role as Role);
         navigate('/pointsTable');
       } else {
+        console.error('Registration failed', body.errorDetails);
         const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
         setAPIErrorMessage(`Registration failed with error ${errorDetails.errorMessage} Please try again.`);
       }

@@ -1,6 +1,5 @@
 package com.tournament.service.auth;
 
-
 import com.tournament.dto.security.AppAuthenticationRequest;
 import com.tournament.dto.security.AppTokenValidationResponse;
 import com.tournament.entity.AppUser;
@@ -11,6 +10,7 @@ import com.tournament.repository.auth.AppUserRepository;
 import com.tournament.service.security.JWTServiceImpl;
 import com.tournament.utils.ApplicationConstants.AppUserRole;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -25,6 +25,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AppAuthenticationServiceImpl implements AppAuthenticationService {
 
     private final AppUserRepository appUserRepository;
@@ -46,13 +47,15 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
                     .isValid(isValid)
                     .build();
         } catch (RecordNotFoundException e) {
+            log.error(e.getMessage());
             throw new RecordNotFoundException(e.getMessage());
         } catch (AuthenticationException e) {
+            log.error(e.getMessage());
             throw new UserUnAuthorizedException(e.getMessage());
         } catch (Exception e) {
+            log.error("unknown exception occurred validating token with error: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
-
 
     }
 
@@ -71,13 +74,18 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             String JWTToken = jwtService.generateToken(user);
 
             return AppAuthenticationResponse.builder()
+                    .username(user.getUsername())
+                    .role(user.getRole().toString())
                     .token(JWTToken)
                     .build();
         } catch (RecordNotFoundException e) {
+            log.error(e.getMessage());
             throw new RecordNotFoundException(e.getMessage());
         } catch (AuthenticationException e) {
+            log.error(e.getMessage());
             throw new UserUnAuthorizedException(e.getMessage());
         } catch (Exception e) {
+            log.error("unknown exception occurred authenticating user with error: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -106,24 +114,38 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             String JWTToken = jwtService.generateToken(user);
 
             return AppAuthenticationResponse.builder()
+                    .username(user.getUsername())
+                    .role(user.getRole().toString())
                     .token(JWTToken)
                     .build();
         } catch (RecordAlreadyExistsException e) {
+            log.error(e.getMessage());
             throw new RecordAlreadyExistsException(e.getMessage());
         } catch (Exception e) {
+            log.error("unknown exception occurred registering user with error: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
     }
 
     @Override
     public AppAuthenticationResponse generateToken(String username) {
-        AppUser user = appUserRepository.findById(username)
-                .orElseThrow(() -> new RecordNotFoundException("User not found with username: " + username));
-        String token = jwtService.generateToken(user);
 
-        return AppAuthenticationResponse.builder()
-                .token(token)
-                .build();
+        try {
+            AppUser user = appUserRepository.findById(username)
+                    .orElseThrow(() -> new RecordNotFoundException("User not found with username: " + username));
+            String token = jwtService.generateToken(user);
+
+            return AppAuthenticationResponse.builder()
+                    .token(token)
+                    .build();
+        } catch (RecordNotFoundException e) {
+            log.error(e.getMessage());
+            throw new RecordNotFoundException(e.getMessage());
+        } catch (Exception e) {
+            log.error("unknown exception occurred generating token with error: {}", e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+
     }
 
 }
