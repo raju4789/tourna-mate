@@ -36,12 +36,65 @@ const StyledFormControl = styled(FormControl)(({ theme }) => ({
   marginBottom: theme.spacing(3),
 }));
 
+const theme = createTheme({
+  palette: {
+    primary: { main: '#556cd6' }, // Example main color
+    secondary: { main: '#19857b' }, // Example secondary color
+    error: { main: '#ff0000' },
+    background: {
+      default: '#f0f0f0',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#2d2d2d',
+      secondary: '#555555',
+    },
+  },
+  typography: {
+    fontFamily: [
+      '"Segoe UI"',
+      '"Roboto"',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+    ].join(','),
+  },
+});
+
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   '& .MuiDataGrid-root': {
-    color: theme.palette.primary.main,
+    border: 'none',
   },
-  '& .MuiDataGrid-columnsContainer': {
+  '& .MuiDataGrid-columnHeaderTitle': {
+    fontWeight: 600,
+  },
+  '& .MuiDataGrid-columnHeaders': {
     backgroundColor: theme.palette.primary.main,
+    color: '#fff',
+    fontSize: '1rem',
+  },
+  '& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell': {
+    borderRight: `1px solid ${theme.palette.divider}`,
+  },
+  '& .MuiDataGrid-row': {
+    '&:nth-of-type(odd)': {
+      backgroundColor: theme.palette.background.default,
+    },
+  },
+  '& .MuiDataGrid-cell': {
+    color: theme.palette.text.secondary,
+    fontWeight: 400,
+    fontSize: '0.875rem',
+    lineHeight: 1.6,
+  },
+  '& .MuiDataGrid-cell:focus': {
+    outline: 'none',
+  },
+  '& .MuiDataGrid-row:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '& .MuiDataGrid-footerContainer': {
+    borderTop: `1px solid ${theme.palette.divider}`,
   },
 }));
 
@@ -114,6 +167,8 @@ const PointsTable: React.FC = () => {
   };
 
   return (
+      <ThemeProvider theme={theme}>
+
     <Container>
       {apiErrorMessage && (
         <ErrorMessageSection variant="h6" gutterBottom>
@@ -146,6 +201,7 @@ const PointsTable: React.FC = () => {
         />
       )}
     </Container>
+    </ThemeProvider>
   );
 };
 
