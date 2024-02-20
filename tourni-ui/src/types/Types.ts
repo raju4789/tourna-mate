@@ -32,12 +32,14 @@ export interface ICommonApiResponse<T> {
 }
 
 export interface ILoginResponse {
+  fullName: string;
   username: string;
   token: string;
   role?: Role;
 }
 
 export interface IRegisterResponse {
+  fullName: string;
   username: string;
   token: string;
   role?: Role;
@@ -82,6 +84,11 @@ export interface ITournament {
   tournamentName: string;
 }
 
+export interface ITeam {
+  teamId: number;
+  teamName: string;
+}
+
 export interface DropdownOption {
   value: string;
   label: string;
@@ -89,3 +96,25 @@ export interface DropdownOption {
 
 export type Anchor = 'top' | 'left' | 'bottom' | 'right';
 export enum Role { ADMIN = 'ADMIN', USER = 'USER' }
+
+export enum MatchResultStatus {
+  TIED = 'TIED',
+  COMPLETED = 'COMPLETED',
+  NO_RESULT = 'NO_RESULT',
+}
+
+export interface IMatchResult {
+  matchNumber: number;
+  tournamentName: string;
+  winnerTeam: string;
+  loserTeam: string;
+  teamOne: string;
+  teamTwo: string;
+  teamOneScore: number;
+  teamTwoScore: number;
+  teamOneWickets: number;
+  teamTwoWickets: number;
+  teamOneOversPlayed: number;
+  teamTwoOversPlayed: number;
+  matchResultStatus: MatchResultStatus;
+}

@@ -6,6 +6,7 @@ import {
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { Link, useNavigate } from 'react-router-dom';
 import { AxiosResponse } from 'axios';
+import log from 'loglevel';
 import {
   StyledAvatar, StyledButton, StyledPaper, StyledTextField,
 } from './Signup.styled';
@@ -26,10 +27,12 @@ const Signup: React.FC = () => {
   const { setItem: setIsAuthenticated } = useLocalStorage('isAuthenticated' as string);
   const { setItem: setUserName } = useLocalStorage('username' as string);
   const { setItem: setRole } = useLocalStorage('role' as string);
+  const { setItem: setFullName } = useLocalStorage('fullName' as string);
+
   const {
     register, handleSubmit, formState: { errors },
   } = useForm<ISignupRequest>({
-    mode: 'onTouched', // Validation will trigger on the blur event
+    mode: 'onTouched',
   });
 
   const onSignup = async (data: ISignupRequest) => {
@@ -42,18 +45,19 @@ const Signup: React.FC = () => {
       const response: AxiosResponse<ICommonApiResponse<IRegisterResponse>> = await registerUser(data);
       const body: ICommonApiResponse<IRegisterResponse> = response.data;
       if (body.success) {
+        setFullName(body.data.fullName as string);
         setUserName(data.username as string);
         setJwt(body.data.token as string);
         setIsAuthenticated(true as boolean);
         setRole(body.data.role as Role);
         navigate('/pointsTable');
       } else {
-        console.error('Registration failed', body.errorDetails);
+        log.error('Registration failed', body.errorDetails);
         const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
         setAPIErrorMessage(`Registration failed with error ${errorDetails.errorMessage} Please try again.`);
       }
     } catch (error) {
-      console.error('Registration failed', error);
+      log.error('Registration failed', error);
       setAPIErrorMessage('Registration failed with unknown error. Please try again.');
     }
   };

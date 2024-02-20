@@ -74,6 +74,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             String JWTToken = jwtService.generateToken(user);
 
             return AppAuthenticationResponse.builder()
+                    .fullName(user.getFirstName() + " " + user.getLastName())
                     .username(user.getUsername())
                     .role(user.getRole().toString())
                     .token(JWTToken)
@@ -114,6 +115,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             String JWTToken = jwtService.generateToken(user);
 
             return AppAuthenticationResponse.builder()
+                    .fullName(user.getFirstName() + " " + user.getLastName())
                     .username(user.getUsername())
                     .role(user.getRole().toString())
                     .token(JWTToken)

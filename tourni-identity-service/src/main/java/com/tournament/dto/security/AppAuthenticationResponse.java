@@ -8,6 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppAuthenticationResponse {
+   String fullName;
    String username;
    String token;
    String role;

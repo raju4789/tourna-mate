@@ -7,6 +7,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 import { AxiosResponse } from 'axios';
+import log from 'loglevel';
 import {
   StyledPaper, StyledAvatar, StyledTextField, StyledButton,
 } from './Login.styled';
@@ -26,6 +27,7 @@ const Login: React.FC = () => {
   const { setItem: setIsAuthenticated } = useLocalStorage('isAuthenticated' as string);
   const { setItem: setUserName } = useLocalStorage('username' as string);
   const { setItem: setRole } = useLocalStorage('role' as string);
+  const { setItem: setFullName } = useLocalStorage('fullName' as string);
 
   const navigate = useNavigate();
 
@@ -34,6 +36,7 @@ const Login: React.FC = () => {
       const response: AxiosResponse<ICommonApiResponse<ILoginResponse>> = await loginUser(data);
       const body: ICommonApiResponse<ILoginResponse> = response.data;
       if (body.success) {
+        setFullName(body.data.fullName as string);
         setJwt(body.data.token as string);
         setUserName(data.username as string);
         setIsAuthenticated(true as boolean);
@@ -41,12 +44,13 @@ const Login: React.FC = () => {
 
         navigate('/pointsTable');
       } else {
+        log.error('Login failed. Please try again.', body.errorDetails);
         setIsAuthenticated(false as boolean);
         const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
         setAPIErrorMessage(`Login failed with error: ${errorDetails.errorMessage}. Please try again.`);
       }
     } catch (error) {
-      console.error('Login failed ', error);
+      log.error('Login failed. Please try again.', error);
       setIsAuthenticated(false as boolean);
       setAPIErrorMessage('Login failed with unknown error. Please try again.');
     }

@@ -4,7 +4,7 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import Box from '@mui/material/Box';
 import {
-  StyledAppBar, StyledToolbar, StyledTypography, StyledButton,
+  StyledAppBar, StyledToolbar, StyledTypography, StyledButton, StyledAppName,
 } from './Header.styled';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import Sidebar from '../sidebar/Sidebar';
@@ -15,8 +15,9 @@ const Header: React.FC = () => {
 
   const { removeItem: removeJwt } = useLocalStorage('jwt' as string);
   const { getItem: getIsAuthenticated, removeItem: removeIsAuthenticated } = useLocalStorage('isAuthenticated' as string);
-  const { getItem: getUserName, removeItem: removeUsername } = useLocalStorage('username' as string);
+  const { removeItem: removeUsername } = useLocalStorage('username' as string);
   const { removeItem: removeRole } = useLocalStorage('role' as string);
+  const { getItem: getFullname, removeItem: removeFullname } = useLocalStorage('fullName' as string);
 
   const [sideBarDirection, setSidebarDirection] = React.useState({
     left: false,
@@ -40,6 +41,7 @@ const Header: React.FC = () => {
     removeIsAuthenticated();
     removeUsername();
     removeRole();
+    removeFullname();
     navigate('/login');
   };
 
@@ -61,14 +63,14 @@ const Header: React.FC = () => {
           >
             <MenuIcon />
           </IconButton>
-          <StyledTypography variant="h6" color="inherit" noWrap>
+          <StyledAppName variant="h6" color="inherit" noWrap>
             Tournamate
-          </StyledTypography>
+          </StyledAppName>
           {getIsAuthenticated() ? (
             <StyledTypography variant="h6" color="inherit" noWrap>
               Welcome
               {' '}
-              {getUserName()}
+              {getFullname()}
             </StyledTypography>
           ) : null}
           {getIsAuthenticated() ? (

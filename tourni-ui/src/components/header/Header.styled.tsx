@@ -20,9 +20,20 @@ export const StyledTypography = styled(Typography)`
   float: right;
 `;
 
+export const StyledAppName = styled(Typography)`
+  position: absolute;
+  left: 5%;
+`;
+
 export const StyledButton = styled(Button)`
   margin: ${({ theme }) => theme.spacing(1, 1.5)};
   border: 1px solid white;
-  background-color: #3f51b5;
-  color: white;
+  background-color: white;
+  color: ${({ theme }) => theme.palette.primary.main};
+
+  &:hover {
+    background-color: ${({ theme }) => theme.palette.primary.main};
+    color: white;
+    border: 1px solid white;
+  }
 `;

@@ -1,5 +1,7 @@
 import axios, { AxiosResponse } from 'axios';
-import { ICommonApiResponse, IPointsTableResponse, ITournament } from '../types/Types';
+import {
+  ICommonApiResponse, IPointsTableResponse, ITeam, ITournament,
+} from '../types/Types';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -14,3 +16,5 @@ const axiosInstance = axios.create({
 export const getPointsTable = (tournamentId: number): Promise<AxiosResponse<ICommonApiResponse<IPointsTableResponse>>> => axiosInstance.get(`/pointstable/tournament/${tournamentId}`);
 
 export const getAllTournaments = (): Promise<AxiosResponse<ICommonApiResponse<ITournament[]>>> => axiosInstance.get('/tournaments');
+
+export const getAllTeams = (): Promise<AxiosResponse<ICommonApiResponse<ITeam[]>>> => axiosInstance.get('/teams');

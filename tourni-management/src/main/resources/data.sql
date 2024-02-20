@@ -4,10 +4,10 @@ VALUES(1, 'cricket', CURRENT_DATE(), UUID(), true);
 
 -- Tournaments
 INSERT IGNORE INTO tournament_db.tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
-VALUES(101, 1, 'Cricket World Cup', 'Cricket World Cup', 2023, 50, CURRENT_DATE(), UUID(), true);
+VALUES(101, 1, 'Cricket World Cup 2023', 'Cricket World Cup', 2023, 50, CURRENT_DATE(), UUID(), true);
 
 INSERT IGNORE INTO tournament_db.tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
-VALUES(102, 1, 'IPL', 'Indian Premier League', 2019, 20, CURRENT_DATE(), UUID(), true);
+VALUES(102, 1, 'IPL 2023', 'Indian Premier League', 2023, 20, CURRENT_DATE(), UUID(), true);
 
 -- Teams
 
