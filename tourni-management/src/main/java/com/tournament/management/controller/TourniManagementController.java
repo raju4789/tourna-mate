@@ -81,9 +81,9 @@ public class TourniManagementController {
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "500", description = "Internal server error"),
             })
-    @GetMapping("teams")
-    public ResponseEntity<CommonApiResponse<List<TeamDTO>>> getAllTeams() {
-        List<TeamDTO> teamDTOList = tourniManagementService.getAllTeams();
+    @GetMapping("/teams?tournamentId={id}")
+    public ResponseEntity<CommonApiResponse<List<TeamDTO>>> getAllTeamsByTournamentId(@RequestParam(name = "id") int tournamentId){
+        List<TeamDTO> teamDTOList = tourniManagementService.getAllTeamsByTournamentId(tournamentId);
         CommonApiResponse<List<TeamDTO>> teams = new CommonApiResponse<>(teamDTOList);
         return ResponseEntity.ok(teams);
     }

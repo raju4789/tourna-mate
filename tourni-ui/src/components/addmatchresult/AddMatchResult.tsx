@@ -1,14 +1,15 @@
 import {
-  MenuItem, InputLabel, Grid, Typography, Avatar, FormHelperText,
+  MenuItem, InputLabel, Grid, Typography, Avatar, FormHelperText, Button,
 } from '@mui/material';
 import log from 'loglevel';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useState, useEffect } from 'react';
 import { AxiosResponse } from 'axios';
 import { useForm } from 'react-hook-form';
-import { getAllTeams, getAllTournaments } from '../../services/TournamentService';
+import { useNavigate } from 'react-router';
+import { addMatchResult, getAllTeams, getAllTournaments } from '../../services/TournamentService';
 import {
-  ICommonApiResponse, IErrorDetails, IMatchResult, ITeam, ITournament, MatchResultStatus,
+  ICommonApiResponse, IErrorDetails, IMatchResult, ITeam, ITournament,
 } from '../../types/Types';
 import {
   StyledFormControl, StyledTextField, StyledGrid, StyledPaper, StyledSelect, StyledFormRow,
@@ -20,21 +21,8 @@ const AddMatchResult = () => {
     { id: 'TIED', name: 'TIED' },
     { id: 'NO_RESULT', name: 'NO_RESULT' },
   ];
-  const [matchResult, setMatchResult] = useState<IMatchResult>({
-    matchNumber: 1,
-    tournamentName: '',
-    winnerTeam: '',
-    loserTeam: '',
-    teamOne: '',
-    teamTwo: '',
-    teamOneScore: 0,
-    teamTwoScore: 0,
-    teamOneWickets: 0,
-    teamTwoWickets: 0,
-    teamOneOversPlayed: 0,
-    teamTwoOversPlayed: 0,
-    matchResultStatus: MatchResultStatus.COMPLETED,
-  });
+
+  const navigate = useNavigate();
 
   const [tournamentOptions, setTournamentOptions] = useState<ITournament[]>([]);
   const [teamOptions, setTeamOptions] = useState<ITeam[]>([]);
@@ -86,16 +74,17 @@ const AddMatchResult = () => {
     fetchTournaments();
   }, []);
 
-  const handleChange = (value: unknown, key: string) => {
-    setMatchResult((prevState) => ({
-      ...prevState,
-      [key as string]: value,
-    }));
-  };
-
-  const saveMatchResult = () => {
-
-    // saveMatchResult();
+  const saveMatchResult = async (data: IMatchResult) => {
+    const response: AxiosResponse<ICommonApiResponse<string>> = await addMatchResult(data);
+    const body: ICommonApiResponse<string> = response.data;
+    if (body.success) {
+      log.info('Match result saved successfully');
+      navigate('/pointsTable');
+    } else {
+      log.error('Match result save failed', body.errorDetails);
+      const errorDetails: IErrorDetails = body.errorDetails || { errorCode: 0, errorMessage: 'unknown error' };
+      setAPIErrorMessage(`Match result save failed with error: ${errorDetails.errorMessage}. Please try again.`);
+    }
   };
 
   return (
@@ -127,7 +116,6 @@ const AddMatchResult = () => {
                 label="Select Tournament"
                 {...register('tournamentName', { required: true })}
                 error={!!errors.tournamentName}
-                onChange={(event) => handleChange(event.target.value, 'tournamentName')}
               >
                 {tournamentOptions.map((tournament) => (
                   <MenuItem key={tournament.tournamentId} value={tournament.tournamentId}>
@@ -135,17 +123,16 @@ const AddMatchResult = () => {
                   </MenuItem>
                 ))}
               </StyledSelect>
-              {!!errors.tournamentName && <FormHelperText>Tournament name is required</FormHelperText>}
+              {!!errors.tournamentName && <FormHelperText sx={{ color: 'red' }}>Tournament name is required</FormHelperText>}
             </StyledFormControl>
           </StyledFormRow>
           <StyledFormRow item xs={12}>
-            <StyledFormControl error>
+            <StyledFormControl>
               <InputLabel>Winner Team ID</InputLabel>
               <StyledSelect
                 label="Select Winner Team"
-                {...register('winnerTeam', { required: true })}
-                error={!!errors.winnerTeam}
-                onChange={(event) => handleChange(event.target.value, 'winnerTeam')}
+                {...register('winnerTeamName', { required: true })}
+                error={!!errors.winnerTeamName}
               >
                 {teamOptions.map((team) => (
                   <MenuItem key={team.teamId} value={team.teamId}>
@@ -153,14 +140,14 @@ const AddMatchResult = () => {
                   </MenuItem>
                 ))}
               </StyledSelect>
-              <FormHelperText>Winner team id is required</FormHelperText>
+              {!!errors.winnerTeamName && <FormHelperText sx={{ color: 'red' }}>Winner team name is required</FormHelperText>}
             </StyledFormControl>
-            <StyledFormControl error>
+            <StyledFormControl>
               <InputLabel>Loser Team ID</InputLabel>
               <StyledSelect
                 label="Select Loser Team"
-                {...register('loserTeamId', { required: true })}
-                error={!!errors.loserTeamId}
+                {...register('loserTeamName', { required: true })}
+                error={!!errors.loserTeamName}
               >
                 {teamOptions.map((team) => (
                   <MenuItem key={team.teamId} value={team.teamId}>
@@ -168,16 +155,16 @@ const AddMatchResult = () => {
                   </MenuItem>
                 ))}
               </StyledSelect>
-              <FormHelperText>Loser team id is required</FormHelperText>
+              {!!errors.loserTeamName && <FormHelperText sx={{ color: 'red' }}>Loser team name is required</FormHelperText>}
             </StyledFormControl>
           </StyledFormRow>
           <StyledFormRow item xs={12}>
-            <StyledFormControl error>
+            <StyledFormControl>
               <InputLabel>Team One ID</InputLabel>
               <StyledSelect
-                value=""
-                {...register('teamOneId', { required: true })}
-                error={!!errors.teamOneId}
+                label="Select Team One"
+                {...register('teamOneName', { required: true })}
+                error={!!errors.teamOneName}
               >
                 {teamOptions.map((team) => (
                   <MenuItem key={team.teamId} value={team.teamId}>
@@ -185,14 +172,14 @@ const AddMatchResult = () => {
                   </MenuItem>
                 ))}
               </StyledSelect>
-              <FormHelperText>Team One id is required</FormHelperText>
+              {!!errors.teamOneName && <FormHelperText sx={{ color: 'red' }}>Team One name is required</FormHelperText>}
             </StyledFormControl>
-            <StyledFormControl error>
+            <StyledFormControl>
               <InputLabel>Team Two ID</InputLabel>
               <StyledSelect
-                value=""
-                {...register('teamTwoId', { required: true })}
-                error={!!errors.teamTwoId}
+                label="Select Team Two"
+                {...register('teamTwoName', { required: true })}
+                error={!!errors.teamTwoName}
               >
                 {teamOptions.map((team) => (
                   <MenuItem key={team.teamId} value={team.teamId}>
@@ -200,7 +187,7 @@ const AddMatchResult = () => {
                   </MenuItem>
                 ))}
               </StyledSelect>
-              <FormHelperText>Team Two id is required</FormHelperText>
+              {!!errors.teamTwoName && <FormHelperText sx={{ color: 'red' }}>Team Two name is required</FormHelperText>}
             </StyledFormControl>
           </StyledFormRow>
           <StyledFormRow item xs={12}>
@@ -258,10 +245,10 @@ const AddMatchResult = () => {
             />
           </StyledFormRow>
           <StyledFormRow item xs={12}>
-            <StyledFormControl error>
+            <StyledFormControl>
               <InputLabel>Match Result Status</InputLabel>
               <StyledSelect
-                value="COMPLETED"
+                label="Select Match Result Status"
                 {...register('matchResultStatus', { required: true })}
                 error={!!errors.matchResultStatus}
               >
@@ -271,9 +258,22 @@ const AddMatchResult = () => {
                   </MenuItem>
                 ))}
               </StyledSelect>
-              <FormHelperText>Match Result Status is required</FormHelperText>
+              {!!errors.matchResultStatus && <FormHelperText sx={{ color: 'red' }}>Match Result Status is required</FormHelperText>}
             </StyledFormControl>
           </StyledFormRow>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            style={{
+              marginTop: '20px',
+            }}
+          >
+            Save Match Result
+          </Button>
+          <Typography style={{ margin: 7, color: 'red' }} variant="body1">
+            {apiErrorMessage}
+          </Typography>
         </form>
       </StyledPaper>
     </StyledGrid>

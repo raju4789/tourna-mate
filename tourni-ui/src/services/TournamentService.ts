@@ -1,6 +1,8 @@
 import axios, { AxiosResponse } from 'axios';
+import { parse } from 'path';
 import {
-  ICommonApiResponse, IPointsTableResponse, ITeam, ITournament,
+  IAddMatchResultRequest,
+  ICommonApiResponse, IMatchResult, IPointsTableResponse, ITeam, ITournament,
 } from '../types/Types';
 
 const headers = {
@@ -18,3 +20,28 @@ export const getPointsTable = (tournamentId: number): Promise<AxiosResponse<ICom
 export const getAllTournaments = (): Promise<AxiosResponse<ICommonApiResponse<ITournament[]>>> => axiosInstance.get('/tournaments');
 
 export const getAllTeams = (): Promise<AxiosResponse<ICommonApiResponse<ITeam[]>>> => axiosInstance.get('/teams');
+
+export const addMatchResult = (data: IMatchResult)
+: Promise<AxiosResponse<ICommonApiResponse<string>>> => {
+  console.log('addMatchResult', data);
+
+  const addMatchResultRequest: IAddMatchResultRequest = {
+    matchNumber: data.matchNumber,
+    tournamentId: parseInt(data.tournamentName, 10),
+    winnerTeamId: parseInt(data.winnerTeamName, 10),
+    loserTeamId: parseInt(data.loserTeamName, 10),
+    teamOneId: parseInt(data.teamOneName, 10),
+    teamTwoId: parseInt(data.teamTwoName, 10),
+    teamOneScore: data.teamOneScore,
+    teamTwoScore: data.teamTwoScore,
+    teamOneWickets: data.teamOneWickets,
+    teamTwoWickets: data.teamTwoWickets,
+    teamOneOversPlayed: data.teamOneOversPlayed,
+    teamTwoOversPlayed: data.teamTwoOversPlayed,
+    matchResultStatus: data.matchResultStatus,
+  };
+
+  console.log('addMatchResultAPI', addMatchResultRequest);
+
+  return axiosInstance.post('/addMatchResult', addMatchResultRequest);
+};

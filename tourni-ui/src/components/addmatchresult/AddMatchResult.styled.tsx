@@ -1,9 +1,12 @@
-import { Grid, Paper, styled, FormControl, Button, TextField, Select } from '@mui/material';
+import {
+  Grid, Paper, styled, FormControl, Button, TextField, Select,
+} from '@mui/material';
 
 export const StyledGrid = styled(Grid)`
-  margin: 20px auto;
-  height: 100vh;
-  overflow: auto; /* Enable scrolling if needed */
+    container
+    justifyContent="center"
+    alignItems="center" // Change this line to align center vertically
+    style={{ height: '100vh', margin: '20px 0', zIndex: 1000 }}
 `;
 
 export const StyledPaper = styled(Paper)`
@@ -40,5 +43,5 @@ export const StyledSelect = styled(Select)`
 
 export const StyledButton = styled(Button)`
   margin-top: 20px;
-  width: 100%; /* Make button full width */
+  
 `;

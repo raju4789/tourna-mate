@@ -17,7 +17,7 @@ public class Tournament extends BaseEntity {
 
     @Id
     @Column(name = "tournament_id")
-    private Long tournamentId;
+    private long tournamentId;
 
     @Column(name = "tournament_type_id", nullable = false)
     private long tournamentTypeId;

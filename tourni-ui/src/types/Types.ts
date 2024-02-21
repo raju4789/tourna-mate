@@ -106,10 +106,26 @@ export enum MatchResultStatus {
 export interface IMatchResult {
   matchNumber: number;
   tournamentName: string;
-  winnerTeam: string;
-  loserTeam: string;
-  teamOne: string;
-  teamTwo: string;
+  winnerTeamName: string;
+  loserTeamName: string;
+  teamOneName: string;
+  teamTwoName: string;
+  teamOneScore: number;
+  teamTwoScore: number;
+  teamOneWickets: number;
+  teamTwoWickets: number;
+  teamOneOversPlayed: number;
+  teamTwoOversPlayed: number;
+  matchResultStatus: MatchResultStatus;
+}
+
+export interface IAddMatchResultRequest {
+  matchNumber: number;
+  tournamentId: number;
+  winnerTeamId: number;
+  loserTeamId: number;
+  teamOneId: number;
+  teamTwoId: number;
   teamOneScore: number;
   teamTwoScore: number;
   teamOneWickets: number;

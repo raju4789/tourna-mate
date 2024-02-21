@@ -10,10 +10,7 @@ import com.tournament.management.mappers.TournamentManagementMappers;
 import com.tournament.management.observers.MatchResultSubject;
 import com.tournament.management.observers.PointsTableObserver;
 import com.tournament.management.observers.TeamStatsObserver;
-import com.tournament.management.repository.MatchResultRepository;
-import com.tournament.management.repository.PointsTableRepository;
-import com.tournament.management.repository.TeamRepository;
-import com.tournament.management.repository.TournamentRepository;
+import com.tournament.management.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,8 +27,8 @@ public class TourniManagementServiceImpl implements TourniManagementService {
     private final MatchResultSubject matchResultSubject;
     private final PointsTableRepository pointsTableRepository;
     private final TeamRepository teamRepository;
-
     private final TournamentRepository tournamentRepository;
+    private final TeamToTournamentMappingRepository teamToTournamentMappingRepository;
 
 
     @Autowired
@@ -42,7 +39,8 @@ public class TourniManagementServiceImpl implements TourniManagementService {
                                        PointsTableObserver pointsTableObserver,
                                        PointsTableRepository pointsTableRepository,
                                        TeamRepository teamRepository,
-                                       TournamentRepository tournamentRepository) {
+                                       TournamentRepository tournamentRepository,
+                                       TeamToTournamentMappingRepository teamToTournamentMappingRepository) {
 
         this.tournamentManagementMappers = tournamentManagementMappers;
         this.matchResultRepository = matchResultRepository;
@@ -50,6 +48,7 @@ public class TourniManagementServiceImpl implements TourniManagementService {
         this.pointsTableRepository = pointsTableRepository;
         this.teamRepository = teamRepository;
         this.tournamentRepository = tournamentRepository;
+        this.teamToTournamentMappingRepository = teamToTournamentMappingRepository;
 
         matchResultSubject.addObserver(teamStatsObserver);
         matchResultSubject.addObserver(pointsTableObserver);
@@ -60,12 +59,18 @@ public class TourniManagementServiceImpl implements TourniManagementService {
     public PointsTableByTournamentResponse getPointsTableByTournamentId(Long tournamentId) throws RecordNotFoundException {
 
         List<PointsTable> pointsTableList = pointsTableRepository.findByTournamentId(tournamentId)
-                .orElseThrow(() -> new RecordNotFoundException("No points table found for tournament id: " + tournamentId));
+                .orElseThrow(() -> {
+                    log.error("No points table found for tournament id: {}", tournamentId);
+                    return new RecordNotFoundException("No points table found for tournament id: " + tournamentId);
+                });
 
         List<PointsTableDTO> pointsTableDTO = pointsTableList.stream()
                 .map(pointsTable -> {
                     String teamName = teamRepository.findTeamNameByTeamId(pointsTable.getTeamId())
-                            .orElseThrow(() -> new RecordNotFoundException("No team found for team id: " + pointsTable.getTeamId()));
+                            .orElseThrow(() -> {
+                                log.error("No team found for team id: {}", pointsTable.getTeamId());
+                                return new RecordNotFoundException("No team found for team id: " + pointsTable.getTeamId());
+                            });
                     return tournamentManagementMappers.mapPointsTableToPointsTableDTO(pointsTable, teamName);
                 })
                 .toList();
@@ -98,8 +103,20 @@ public class TourniManagementServiceImpl implements TourniManagementService {
     }
 
     @Override
-    public List<TeamDTO> getAllTeams() {
-        List<Team> teamList = teamRepository.findAll();
+    public List<TeamDTO> getAllTeamsByTournamentId(int tournamentId) {
+
+        List<Long> teamIds = teamToTournamentMappingRepository.getTeamIdsByTournamentId((long) tournamentId)
+                .orElseThrow(() -> {
+                    log.error("No teams found for tournament id: {}", tournamentId);
+                    return new RecordNotFoundException("No teams found for tournament id: " + tournamentId);
+                });
+
+        List<Team> teamList = teamRepository.findTeamsByTeamIds(teamIds)
+                .orElseThrow(() -> {
+                    log.error("No teams found for team ids: {}", teamIds);
+                    return new RecordNotFoundException("No teams found for team ids: " + teamIds);
+                });
+
         return teamList.stream()
                 .map(tournamentManagementMappers::mapTeamToTeamDTO)
                 .collect(Collectors.toList());

@@ -12,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "team_stats", uniqueConstraints = @UniqueConstraint(columnNames = {"team_id", "tournament_id"}))
+@Table(name = "team_stats")
 public class TeamStats extends BaseEntity {
 
     @Id
