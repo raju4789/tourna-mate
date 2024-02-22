@@ -74,8 +74,8 @@ public class TourniManagementController {
     }
 
     @Operation(
-            description = "Get endpoint to retrieve all teams",
-            summary = "Get all teams",
+            description = "Get endpoint to retrieve all teams by tournament id",
+            summary = "Get all teams by tournament id",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Teams retrieved successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
