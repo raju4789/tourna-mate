@@ -4,7 +4,7 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import Box from '@mui/material/Box';
 import {
-  StyledAppBar, StyledToolbar, StyledTypography, StyledButton, StyledAppName,
+  StyledAppBar, StyledToolbar, StyledTypography, StyledButton, StyledAppName, AuthenticatedSection,
 } from './Header.styled';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import Sidebar from '../sidebar/Sidebar';
@@ -51,8 +51,8 @@ const Header: React.FC = () => {
 
   return (
     <Box>
-      <StyledAppBar position="static" color="default" elevation={0}>
-        <StyledToolbar>
+      <StyledAppBar color="default" elevation={0}>
+        <StyledToolbar style={{ justifyContent: 'space-between' }}>
           <IconButton
             size="large"
             edge="start"
@@ -66,31 +66,27 @@ const Header: React.FC = () => {
           <StyledAppName variant="h6" color="inherit" noWrap>
             Tournamate
           </StyledAppName>
-          {getIsAuthenticated() ? (
-            <StyledTypography variant="h6" color="inherit" noWrap>
-              Welcome
-              {' '}
-              {getFullname()}
-            </StyledTypography>
-          ) : null}
-          {getIsAuthenticated() ? (
-            <StyledButton
-              color="secondary"
-              variant="outlined"
-              onClick={onLogout}
-            >
-              Logout
-            </StyledButton>
-          ) : null}
-          {!getIsAuthenticated() ? (
-            <StyledButton
-              color="secondary"
-              variant="outlined"
-              onClick={onLogin}
-            >
-              Login
-            </StyledButton>
-          ) : null}
+          <AuthenticatedSection sx={{
+            display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: '10px',
+          }}
+          >
+            {getIsAuthenticated() ? (
+              <>
+                <StyledTypography variant="h6" color="inherit" noWrap>
+                  Welcome
+                  {' '}
+                  {getFullname()}
+                </StyledTypography>
+                <StyledButton color="secondary" variant="outlined" onClick={onLogout}>
+                  Logout
+                </StyledButton>
+              </>
+            ) : (
+              <StyledButton color="secondary" variant="outlined" onClick={onLogin}>
+                Login
+              </StyledButton>
+            )}
+          </AuthenticatedSection>
         </StyledToolbar>
       </StyledAppBar>
       <Sidebar sideBarDirection={sideBarDirection} toggleDrawer={toggleDrawer} />

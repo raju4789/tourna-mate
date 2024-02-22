@@ -103,9 +103,9 @@ public class TourniManagementServiceImpl implements TourniManagementService {
     }
 
     @Override
-    public List<TeamDTO> getAllTeamsByTournamentId(int tournamentId) {
+    public List<TeamDTO> getAllTeamsByTournamentId(Long tournamentId) {
 
-        List<Long> teamIds = teamToTournamentMappingRepository.getTeamIdsByTournamentId((long) tournamentId)
+        List<Long> teamIds = teamToTournamentMappingRepository.getTeamIdsByTournamentId(tournamentId)
                 .orElseThrow(() -> {
                     log.error("No teams found for tournament id: {}", tournamentId);
                     return new RecordNotFoundException("No teams found for tournament id: " + tournamentId);

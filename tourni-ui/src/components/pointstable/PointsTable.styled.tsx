@@ -105,3 +105,11 @@ export const StyledSelect = styled(Select)(({ theme }) => ({
     backgroundColor: theme.palette.background.paper,
   },
 }));
+
+export const PointsTableSection = styled(Box)`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+`;

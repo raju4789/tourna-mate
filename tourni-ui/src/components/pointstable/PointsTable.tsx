@@ -10,7 +10,7 @@ import {
 } from '../../types/Types';
 import { getPointsTable, getAllTournaments } from '../../services/TournamentService';
 import {
-  Container, ErrorMessageSection, PointsTableHeader, StyledDataGrid, StyledFormControl, StyledSelect, theme,
+  Container, ErrorMessageSection, StyledDataGrid, StyledFormControl, StyledSelect, theme,
 } from './PointsTable.styled';
 
 const PointsTable: React.FC = () => {
@@ -88,9 +88,6 @@ const PointsTable: React.FC = () => {
             {apiErrorMessage}
           </ErrorMessageSection>
         )}
-        <PointsTableHeader>
-          Points Table
-        </PointsTableHeader>
         <StyledFormControl>
           <InputLabel>Tournament</InputLabel>
           <StyledSelect

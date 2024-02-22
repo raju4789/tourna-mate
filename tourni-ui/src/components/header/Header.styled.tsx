@@ -1,5 +1,5 @@
 import {
-  AppBar, Toolbar, Typography, Button, styled,
+  AppBar, Toolbar, Typography, Button, styled, Box,
 } from '@mui/material';
 
 export const StyledAppBar = styled(AppBar)(({ theme }) => ({
@@ -16,8 +16,6 @@ export const StyledToolbar = styled(Toolbar)`
 `;
 
 export const StyledTypography = styled(Typography)`
-  flex-grow: 1;
-  float: right;
 `;
 
 export const StyledAppName = styled(Typography)`
@@ -26,14 +24,23 @@ export const StyledAppName = styled(Typography)`
 `;
 
 export const StyledButton = styled(Button)`
-  margin: ${({ theme }) => theme.spacing(1, 1.5)};
   border: 1px solid white;
   background-color: white;
   color: ${({ theme }) => theme.palette.primary.main};
+  margin-right: 0px;
+
 
   &:hover {
     background-color: ${({ theme }) => theme.palette.primary.main};
     color: white;
     border: 1px solid white;
   }
+`;
+
+export const AuthenticatedSection = styled(Box)`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
 `;

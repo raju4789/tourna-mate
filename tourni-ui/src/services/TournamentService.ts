@@ -19,12 +19,10 @@ export const getPointsTable = (tournamentId: number): Promise<AxiosResponse<ICom
 
 export const getAllTournaments = (): Promise<AxiosResponse<ICommonApiResponse<ITournament[]>>> => axiosInstance.get('/tournaments');
 
-export const getAllTeams = (): Promise<AxiosResponse<ICommonApiResponse<ITeam[]>>> => axiosInstance.get('/teams');
+export const getAllTeams = (tournamentId: number): Promise<AxiosResponse<ICommonApiResponse<ITeam[]>>> => axiosInstance.get(`/teams?tournamentId=${tournamentId}`);
 
 export const addMatchResult = (data: IMatchResult)
 : Promise<AxiosResponse<ICommonApiResponse<string>>> => {
-  console.log('addMatchResult', data);
-
   const addMatchResultRequest: IAddMatchResultRequest = {
     matchNumber: data.matchNumber,
     tournamentId: parseInt(data.tournamentName, 10),
@@ -40,8 +38,6 @@ export const addMatchResult = (data: IMatchResult)
     teamTwoOversPlayed: data.teamTwoOversPlayed,
     matchResultStatus: data.matchResultStatus,
   };
-
-  console.log('addMatchResultAPI', addMatchResultRequest);
 
   return axiosInstance.post('/addMatchResult', addMatchResultRequest);
 };

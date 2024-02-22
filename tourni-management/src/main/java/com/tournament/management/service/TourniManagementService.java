@@ -13,5 +13,5 @@ public interface TourniManagementService {
 
     List<TournamentDTO> getAllTournaments();
 
-    List<TeamDTO> getAllTeamsByTournamentId(int tournamentId);
+    List<TeamDTO> getAllTeamsByTournamentId(Long tournamentId);
 }
