@@ -10,12 +10,14 @@ import com.tournament.repository.auth.AppUserRepository;
 import com.tournament.service.security.JWTServiceImpl;
 import com.tournament.utils.ApplicationConstants.AppUserRole;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.tournament.dto.security.AppAuthenticationResponse;
 import com.tournament.dto.security.AppRegistrationRequest;
@@ -25,13 +27,14 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AppAuthenticationServiceImpl implements AppAuthenticationService {
 
     private final AppUserRepository appUserRepository;
     private final JWTServiceImpl jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+
+    private static final Logger log = LoggerFactory.getLogger(AppAuthenticationServiceImpl.class);
 
     @Override
     public AppTokenValidationResponse validateToken(String token) {

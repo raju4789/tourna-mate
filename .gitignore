@@ -4,3 +4,5 @@ target/
 logs/
 
 *.log
+
+mysql_tournament_data/

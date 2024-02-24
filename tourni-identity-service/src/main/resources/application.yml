@@ -1,43 +1,13 @@
 server:
   port: 8087
+
 spring:
   application:
     name: tourni-identity-service
-  format:
-    style: google
-  jpa:
-    hibernate:
-      ddl-auto: update
-    defer-datasource-initialization: true
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/tournament_db
-    username: ${MYSQL_USER:tournament_admin}
-    password: ${MYSQL_PASSWORD:tournament@2023}
-  sql:
-    init:
-      mode: always
-
-jwt:
-  secret: 6a8e1e15d6b7892e8e6f13d7bc54b6c07d398c57923c8b2044973203e7023704
-  expirationTime: 86400000
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
+  config:
+    import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
 
 management:
-  tracing:
-    sampling:
-      probability: 1.0
-  endpoint:
-    web:
-      exposure:
-        include: "*"
-    health:
-      show-details: always
-
-logging:
-  pattern:
-    level: '%5p [${spring.application.name}, %X{traceId:-}, %X{spanId:-}]'
+  observations:
+    key-values:
+      application: tourni-management

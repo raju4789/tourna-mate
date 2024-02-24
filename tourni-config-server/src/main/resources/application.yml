@@ -1,0 +1,16 @@
+spring:
+    application:
+        name: tourni-config-server
+    cloud:
+        config:
+            server:
+                git:
+                    uri: https://github.com/raju4789/tourni-config
+
+management:
+    observations:
+        key-values:
+            application: tourni-config-server
+
+server:
+    port: 8888

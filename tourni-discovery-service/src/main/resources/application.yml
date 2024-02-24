@@ -1,6 +1,8 @@
 spring:
   application:
-    name: tourni-discovery-server
+    name: tourni-discovery-service
+  config:
+    import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
 
 server:
   port: 8761
@@ -11,17 +13,6 @@ eureka:
     fetch-registry: false
 
 management:
-  tracing:
-    sampling:
-      probability: 1.0
-  endpoint:
-    web:
-      exposure:
-        include: "*"
-    health:
-      show-details: always
-
-
-logging:
-  pattern:
-    level: '%5p [${spring.application.name}, %X{traceId:-}, %X{spanId:-}]'
+  observations:
+    key-values:
+      application: tourni-discovery-service

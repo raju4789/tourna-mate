@@ -7,7 +7,10 @@ import com.tournament.exceptions.InvalidRequestException;
 import com.tournament.exceptions.RecordAlreadyExistsException;
 import com.tournament.exceptions.RecordNotFoundException;
 import com.tournament.exceptions.UserUnAuthorizedException;
+import com.tournament.service.auth.AppAuthenticationServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,8 +23,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.List;
 
 @RestControllerAdvice
-@Slf4j
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(AppAuthenticationServiceImpl.class);
 
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<CommonApiResponse<String>> handleInvalidRequestException(InvalidRequestException ex) {

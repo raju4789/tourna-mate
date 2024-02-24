@@ -4,6 +4,8 @@ import com.tournament.gateway.service.TourniGatewayAuthenticationService;
 import com.tournament.gateway.exceptions.TokenValidationFailedException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -16,7 +18,6 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 @Component
-@Slf4j
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
     private final RouteValidator routeValidator;
@@ -30,6 +31,9 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     @Value("${jwt.headerSkipLength}")
     private int headerSkipLength;
+
+    private static final Logger log = LoggerFactory.getLogger(AuthenticationFilter.class);
+
 
 
     @Autowired

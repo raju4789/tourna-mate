@@ -20,6 +20,7 @@
         <module>tourni-identity-service</module>
         <module>tourni-gateway</module>
         <module>tourni-management</module>
+        <module>tourni-config-server</module>
     </modules>
 
     <properties>

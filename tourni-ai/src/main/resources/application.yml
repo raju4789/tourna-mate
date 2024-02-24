@@ -1,38 +1,10 @@
-eureka:
-  client:
-    service-url:
-      defaultZone: http://tourni-discovery-service:8761/eureka/
-
 spring:
   application:
     name: tourni-ai
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:tourni-mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:tournament_db}
-    username: ${MYSQL_USER:tournament_admin}
-    password: ${MYSQL_PASSWORD:tournament@2023}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    defer-datasource-initialization: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-  sql:
-    init:
-      mode: always
+  config:
+    import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
 
 management:
-  tracing:
-    sampling:
-      probability: 1.0
-  endpoint:
-    web:
-      exposure:
-        include: "*"
-    health:
-      show-details: always
-
-logging:
-  pattern:
-    level: '%5p [${spring.application.name}, %X{traceId:-}, %X{spanId:-}]'
+  observations:
+    key-values:
+      application: tourni-ai

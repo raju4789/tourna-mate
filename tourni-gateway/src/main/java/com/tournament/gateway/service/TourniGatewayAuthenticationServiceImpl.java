@@ -5,6 +5,8 @@ import com.tournament.gateway.dto.security.AppTokenValidationRequest;
 import com.tournament.gateway.dto.security.AppTokenValidationResponse;
 import com.tournament.gateway.exceptions.TokenValidationFailedException;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.core.ParameterizedTypeReference;
@@ -21,6 +23,8 @@ public class TourniGatewayAuthenticationServiceImpl implements TourniGatewayAuth
     private WebClient webClient;
     @Value("${identity.service.baseUrl:}")
     private String identityServiceBaseUrl;
+
+    private static final Logger log = LoggerFactory.getLogger(TourniGatewayAuthenticationServiceImpl.class);
 
     public TourniGatewayAuthenticationServiceImpl(@LoadBalanced WebClient.Builder webClientBuilder) {
         this.webClientBuilder = webClientBuilder;
@@ -42,8 +46,10 @@ public class TourniGatewayAuthenticationServiceImpl implements TourniGatewayAuth
                 })
                 .flatMap(response -> {
                     if (response == null || !response.isSuccess() || response.getData() == null || !response.getData().isValid()) {
+                        log.error("Token validation failed");
                         return Mono.error(new TokenValidationFailedException("Token validation failed", HttpStatus.UNAUTHORIZED));
                     }
+                    log.info("Token validation successful");
                     return Mono.just(response.getData());
                 });
     }

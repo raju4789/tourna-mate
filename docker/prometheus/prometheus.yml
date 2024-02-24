@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 2s
+  evaluation_interval: 2s
+
+scrape_configs:
+  - job_name: 'tourni-prometheus'
+    static_configs:
+      - targets: ['tourni-prometheus:9090']
+  - job_name: 'tourni-config-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'tourni-config-server:8888' ]
+  - job_name: 'tourni-discovery-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'tourni-discovery-service:8761' ]
+  - job_name: 'tourni-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['tourni-gateway:8080']
+  - job_name: 'tourni-management'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['tourni-management:8083']
+  - job_name: 'tourni-identity-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['tourni-identity-service:8082']
+  - job_name: 'tourni-ai'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['tourni-ai:8084']
+

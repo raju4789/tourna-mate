@@ -21,31 +21,68 @@ services:
       start_period: 10s
     restart: always
     networks:
-        - tourni-network
+      - tourni-network
 
-  tourni-zipkin-server:
-    image: openzipkin/zipkin:2.23
-    container_name: tourni-zipkin-server
+  tourni-loki:
+    image: grafana/loki:2.2.1
+    container_name: tourni-loki
     ports:
-      - "9411:9411"
+      - "3100:3100"
     networks:
       - tourni-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://tourni-zipkin-server:9411/api/v2/services"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
+
+  tourni-prometheus:
+    image: prom/prometheus:v2.46.0
+    container_name: tourni-prometheus
+    command:
+      - --enable-feature=exemplar-storage
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - tourni-network
+
+  tourni-tempo:
+    image: grafana/tempo:2.2.2
+    container_name: tourni-tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./docker/tempo/tempo.yml:/etc/tempo.yaml:ro
+      - ./docker/tempo/tempo-data:/tmp/tempo
+    ports:
+      - "3110:3100"  # Tempo
+      - "9411:9411" # zipkin
+    networks:
+      - tourni-network
+
+  tourni-grafana:
+    image: grafana/grafana:10.1.0
+    container_name: tourni-grafana
+    volumes:
+      - ./docker/grafana:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    ports:
+      - "3000:3000"
+    networks:
+      - tourni-network
 
   tourni-discovery-service:
     image: raju5800/tourni-discovery-service:latest
     container_name: tourni-discovery-service
-    pull_policy: always
     ports:
       - "8761:8761"
-    networks:
-      - tourni-network
     depends_on:
-        - tourni-zipkin-server
+      - tourni-config-server
+      - tourni-prometheus
+      - tourni-loki
+      - tourni-tempo
+      - tourni-grafana
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://tourni-discovery-service:8761/actuator/health" ]
       interval: 30s
@@ -53,36 +90,58 @@ services:
       retries: 3
       start_period: 40s
     environment:
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
+      CONFIG_SERVICE_HOST: tourni-config-server
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
+    networks:
+      - tourni-network
+
+  tourni-config-server:
+    image: raju5800/tourni-config-server:latest
+    container_name: tourni-config-server
+    ports:
+      - "8888:8888"
+    networks:
+      - tourni-network
+    depends_on:
+      - tourni-prometheus
+      - tourni-loki
+      - tourni-tempo
+      - tourni-grafana
 
   tourni-gateway:
     image: raju5800/tourni-gateway:latest
     container_name: tourni-gateway
-    pull_policy: always
     ports:
       - "8080:8080"
-    networks:
-      - tourni-network
     depends_on:
-      - tourni-zipkin-server
       - tourni-discovery-service
+      - tourni-config-server
+      - tourni-prometheus
+      - tourni-loki
+      - tourni-tempo
+      - tourni-grafana
     environment:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
+      CONFIG_SERVICE_HOST: tourni-config-server
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
+
+    networks:
+      - tourni-network
 
   tourni-identity-service:
     image: raju5800/tourni-identity-service:latest
     container_name: tourni-identity-service
     ports:
       - "8082:8080"
-    networks:
-      - tourni-network
-    pull_policy: always
     depends_on:
       - tourni-mysql
-      - tourni-zipkin-server
       - tourni-discovery-service
+      - tourni-config-server
+      - tourni-prometheus
+      - tourni-loki
+      - tourni-tempo
+      - tourni-grafana
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -92,21 +151,25 @@ services:
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka
       EUREKA.CLIENT.FETCH-REGISTRY: true
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
+      CONFIG_SERVICE_HOST: tourni-config-server
+    networks:
+      - tourni-network
 
   tourni-management:
     image: raju5800/tourni-management:latest
     container_name: tourni-management
-    pull_policy: always
     ports:
       - "8083:8080"
-    networks:
-      - tourni-network
     depends_on:
       - tourni-mysql
-      - tourni-zipkin-server
       - tourni-discovery-service
       - tourni-identity-service
+      - tourni-config-server
+      - tourni-prometheus
+      - tourni-loki
+      - tourni-tempo
+      - tourni-grafana
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -116,11 +179,23 @@ services:
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka
       EUREKA.CLIENT.FETCH-REGISTRY: true
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
+      CONFIG_SERVICE_HOST: tourni-config-server
+    networks:
+      - tourni-network
 
   tourni-ai:
     image: raju5800/tourni-ai:latest
     container_name: tourni-ai
+    ports:
+      - "8084:8080"
+    depends_on:
+      - tourni-mysql
+      - tourni-discovery-service
+      - tourni-config-server
+      - tourni-prometheus
+      - tourni-loki
+      - tourni-tempo
+      - tourni-grafana
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://tourni-mysql:3306/tournament_db
       MYSQL_HOST: tourni-mysql
@@ -128,25 +203,19 @@ services:
       SPRING_DATASOURCE_USERNAME: tournament_admin
       SPRING_DATASOURCE_PASSWORD: tournament@2023
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://tourni-discovery-service:8761/eureka
-      MANAGEMENT_TRACING_ENDPOINT: http://tourni-zipkin-server:9411/api/v2/spans
-    ports:
-      - "8084:8080"
+      CONFIG_SERVICE_HOST: tourni-config-server
     networks:
       - tourni-network
-    depends_on:
-      - tourni-mysql
-      - tourni-zipkin-server
-      - tourni-discovery-service
 
-  tourni-ui: # New service for tourni-ui React.js project
-    image: raju5800/tourni-ui:latest # Replace with the image name for your tourni-ui project
+  tourni-ui:
+    image: raju5800/tourni-ui:latest
     container_name: tourni-ui
     ports:
       - "8002:8000"
-    networks:
-      - tourni-network
     depends_on:
       - tourni-gateway
+    networks:
+      - tourni-network
 
 # Volumes
 volumes:
@@ -155,3 +224,4 @@ volumes:
 # Networks
 networks:
   tourni-network:
+    driver: bridge
