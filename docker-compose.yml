@@ -53,8 +53,8 @@ services:
       - ./docker/tempo/tempo.yml:/etc/tempo.yaml:ro
       - ./docker/tempo/tempo-data:/tmp/tempo
     ports:
-      - "3110:3100"  # Tempo
-      - "9411:9411" # zipkin
+      - "3210:3200"  # External access to Tempo HTTP endpoint
+      - "9411:9411" # Zipkin receiver endpoint
     networks:
       - tourni-network
 
