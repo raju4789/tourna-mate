@@ -53,7 +53,7 @@ services:
       - ./docker/tempo/tempo.yml:/etc/tempo.yaml:ro
       - ./docker/tempo/tempo-data:/tmp/tempo
     ports:
-      - "3110:3100"  # Tempo
+      - "3210:3200"  # Tempo
       - "9411:9411" # zipkin
     networks:
       - tourni-network
@@ -113,6 +113,7 @@ services:
     container_name: tourni-gateway
     ports:
       - "8080:8080"
+      - "8089:8089"
     depends_on:
       - tourni-discovery-service
       - tourni-config-server
@@ -178,6 +179,7 @@ services:
       MYSQL_USER: tournament_admin
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
     networks:

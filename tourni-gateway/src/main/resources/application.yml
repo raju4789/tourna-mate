@@ -39,6 +39,12 @@ spring:
             - Path=/api/v1/auth/**
 
 management:
+  server:
+    port: 8089
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
   observations:
     key-values:
       application: tourni-gateway
