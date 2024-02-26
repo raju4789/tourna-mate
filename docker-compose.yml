@@ -23,18 +23,36 @@ services:
     networks:
       - tourni-network
 
-  tourni-loki:
-    image: grafana/loki:2.2.1
-    container_name: tourni-loki
+  tempo:
+    image: grafana/tempo
+    extra_hosts: ['host.docker.internal:host-gateway']
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./docker/tempo/tempo-local.yml:/etc/tempo.yaml:ro
+      - ./tempo-data:/tmp/tempo
     ports:
-      - "3100:3100"
+      - "14268"  # jaeger ingest
+      - "9411:9411" # zipkin
     networks:
       - tourni-network
-    command: [ "-config.file=/etc/loki/local-config.yaml" ]
 
-  tourni-prometheus:
-    image: prom/prometheus:v2.46.0
-    container_name: tourni-prometheus
+  loki:
+    image: grafana/loki
+    extra_hosts: ['host.docker.internal:host-gateway']
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
+    ports:
+      - "3100:3100"                                   # loki needs to be exposed so it receives logs
+    environment:
+      - JAEGER_AGENT_HOST=tempo
+      - JAEGER_ENDPOINT=http://tempo:14268/api/traces # send traces to Tempo
+      - JAEGER_SAMPLER_TYPE=const
+      - JAEGER_SAMPLER_PARAM=1
+    networks:
+      - tourni-network
+
+  prometheus:
+    image: prom/prometheus
+    extra_hosts: ['host.docker.internal:host-gateway']
     command:
       - --enable-feature=exemplar-storage
       - --config.file=/etc/prometheus/prometheus.yml
@@ -45,24 +63,12 @@ services:
     networks:
       - tourni-network
 
-  tourni-tempo:
-    image: grafana/tempo:2.2.2
-    container_name: tourni-tempo
-    command: [ "-config.file=/etc/tempo.yaml" ]
+  grafana:
+    image: grafana/grafana
+    extra_hosts: ['host.docker.internal:host-gateway']
     volumes:
-      - ./docker/tempo/tempo.yml:/etc/tempo.yaml:ro
-      - ./docker/tempo/tempo-data:/tmp/tempo
-    ports:
-      - "3210:3200"  # External access to Tempo HTTP endpoint
-      - "9411:9411" # Zipkin receiver endpoint
-    networks:
-      - tourni-network
-
-  tourni-grafana:
-    image: grafana/grafana:10.1.0
-    container_name: tourni-grafana
-    volumes:
-      - ./docker/grafana:/etc/grafana/provisioning/datasources:ro
+      - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
@@ -79,10 +85,10 @@ services:
       - "8761:8761"
     depends_on:
       - tourni-config-server
-      - tourni-prometheus
-      - tourni-loki
-      - tourni-tempo
-      - tourni-grafana
+      - prometheus
+      - loki
+      - tempo
+      - grafana
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://tourni-discovery-service:8761/actuator/health" ]
       interval: 30s
@@ -103,10 +109,10 @@ services:
     networks:
       - tourni-network
     depends_on:
-      - tourni-prometheus
-      - tourni-loki
-      - tourni-tempo
-      - tourni-grafana
+      - prometheus
+      - loki
+      - tempo
+      - grafana
 
   tourni-gateway:
     image: raju5800/tourni-gateway:latest
@@ -117,16 +123,15 @@ services:
     depends_on:
       - tourni-discovery-service
       - tourni-config-server
-      - tourni-prometheus
-      - tourni-loki
-      - tourni-tempo
-      - tourni-grafana
+      - prometheus
+      - loki
+      - tempo
+      - grafana
     environment:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
-
     networks:
       - tourni-network
 
@@ -139,10 +144,10 @@ services:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-config-server
-      - tourni-prometheus
-      - tourni-loki
-      - tourni-tempo
-      - tourni-grafana
+      - prometheus
+      - loki
+      - tempo
+      - grafana
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -167,10 +172,10 @@ services:
       - tourni-discovery-service
       - tourni-identity-service
       - tourni-config-server
-      - tourni-prometheus
-      - tourni-loki
-      - tourni-tempo
-      - tourni-grafana
+      - prometheus
+      - loki
+      - tempo
+      - grafana
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -194,10 +199,10 @@ services:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-config-server
-      - tourni-prometheus
-      - tourni-loki
-      - tourni-tempo
-      - tourni-grafana
+      - prometheus
+      - loki
+      - tempo
+      - grafana
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://tourni-mysql:3306/tournament_db
       MYSQL_HOST: tourni-mysql

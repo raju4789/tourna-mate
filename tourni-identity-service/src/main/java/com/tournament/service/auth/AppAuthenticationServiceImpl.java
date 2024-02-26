@@ -9,7 +9,9 @@ import com.tournament.exceptions.UserUnAuthorizedException;
 import com.tournament.repository.auth.AppUserRepository;
 import com.tournament.service.security.JWTServiceImpl;
 import com.tournament.utils.ApplicationConstants.AppUserRole;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -127,7 +129,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             log.error(e.getMessage());
             throw new RecordAlreadyExistsException(e.getMessage());
         } catch (Exception e) {
-            log.error("unknown exception occurred registering user with error: {}", e.getMessage());
+            log.error("unknown exception occurred registering user", e);
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -147,7 +149,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             log.error(e.getMessage());
             throw new RecordNotFoundException(e.getMessage());
         } catch (Exception e) {
-            log.error("unknown exception occurred generating token with error: {}", e.getMessage());
+            log.error("unknown exception occurred generating token", e);
             throw new RuntimeException(e.getMessage());
         }
 

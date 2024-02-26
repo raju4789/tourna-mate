@@ -4,7 +4,7 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://tourni-prometheus:9090
+    url: http://host.docker.internal:9090
     editable: false
     jsonData:
       httpMethod: POST
@@ -15,7 +15,7 @@ datasources:
     type: tempo
     access: proxy
     orgId: 1
-    url: http://tourni-tempo:3200
+    url: http://tempo:3200
     basicAuth: false
     isDefault: true
     version: 1
@@ -25,15 +25,13 @@ datasources:
     jsonData:
       httpMethod: GET
       tracesToLogs:
-        datasourceUid: loki
-      nodeGraph:
-        enabled: true
+        datasourceUid: 'loki'
   - name: Loki
     type: loki
     uid: loki
     access: proxy
     orgId: 1
-    url: http://tourni-loki:3100
+    url: http://loki:3100
     basicAuth: false
     isDefault: false
     version: 1

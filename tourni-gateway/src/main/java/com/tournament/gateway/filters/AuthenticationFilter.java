@@ -2,7 +2,6 @@ package com.tournament.gateway.filters;
 
 import com.tournament.gateway.service.TourniGatewayAuthenticationService;
 import com.tournament.gateway.exceptions.TokenValidationFailedException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +32,6 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
     private int headerSkipLength;
 
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFilter.class);
-
-
 
     @Autowired
     public AuthenticationFilter(RouteValidator routeValidator, TourniGatewayAuthenticationService tourniGatewayAuthenticationService) {
