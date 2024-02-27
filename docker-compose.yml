@@ -25,10 +25,11 @@ services:
 
   tempo:
     image: grafana/tempo
+    container_name: tempo
     extra_hosts: ['host.docker.internal:host-gateway']
     command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:
-      - ./docker/tempo/tempo-local.yml:/etc/tempo.yaml:ro
+      - ./docker/tempo/tempo-local.yaml:/etc/tempo.yaml:ro
       - ./tempo-data:/tmp/tempo
     ports:
       - "14268"  # jaeger ingest
@@ -38,6 +39,7 @@ services:
 
   loki:
     image: grafana/loki
+    container_name: loki
     extra_hosts: ['host.docker.internal:host-gateway']
     command: [ "-config.file=/etc/loki/local-config.yaml" ]
     ports:
@@ -52,6 +54,7 @@ services:
 
   prometheus:
     image: prom/prometheus
+    container_name: prometheus
     extra_hosts: ['host.docker.internal:host-gateway']
     command:
       - --enable-feature=exemplar-storage
@@ -65,6 +68,7 @@ services:
 
   grafana:
     image: grafana/grafana
+    container_name: grafana
     extra_hosts: ['host.docker.internal:host-gateway']
     volumes:
       - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
@@ -97,7 +101,7 @@ services:
       start_period: 40s
     environment:
       CONFIG_SERVICE_HOST: tourni-config-server
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
 
@@ -131,7 +135,7 @@ services:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
 
@@ -157,7 +161,7 @@ services:
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka
       EUREKA.CLIENT.FETCH-REGISTRY: true
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
       CONFIG_SERVICE_HOST: tourni-config-server
     networks:
       - tourni-network
@@ -184,7 +188,7 @@ services:
       MYSQL_USER: tournament_admin
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tourni-tempo:9411/api/v2/spans
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
     networks:

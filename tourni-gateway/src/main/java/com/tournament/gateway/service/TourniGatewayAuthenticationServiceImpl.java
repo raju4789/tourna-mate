@@ -36,6 +36,8 @@ public class TourniGatewayAuthenticationServiceImpl implements TourniGatewayAuth
     }
 
     public Mono<AppTokenValidationResponse> validateToken(String token) {
+
+        log.info("Validating token");
         AppTokenValidationRequest request = AppTokenValidationRequest.builder().token(token).build();
 
         return webClient.post()
