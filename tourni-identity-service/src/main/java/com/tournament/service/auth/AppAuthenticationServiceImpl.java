@@ -41,6 +41,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
     @Override
     public AppTokenValidationResponse validateToken(String token) {
         try {
+            log.info("Validating token");
             String username = jwtService.extractUsername(token);
 
             AppUser user = appUserRepository.findById(username)
@@ -67,7 +68,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
     @Override
     public AppAuthenticationResponse authenticate(AppAuthenticationRequest appAuthenticationRequest) {
         try {
-
+            log.info("Authenticating user");
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(appAuthenticationRequest.getUsername(), appAuthenticationRequest.getPassword())
             );
@@ -99,6 +100,7 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
     @Override
     public AppAuthenticationResponse register(AppRegistrationRequest appRegistrationRequest) {
         try {
+            log.info("Registering user");
             appUserRepository.findById(appRegistrationRequest.getUsername())
                     .ifPresent(user -> {
                         throw new RecordAlreadyExistsException("User already exists with username: " + appRegistrationRequest.getUsername());
