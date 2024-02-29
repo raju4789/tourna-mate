@@ -3,8 +3,3 @@ spring:
     name: tourni-ai
   config:
     import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
-
-management:
-  observations:
-    key-values:
-      application: tourni-ai

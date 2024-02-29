@@ -1,29 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <!-- Inclusion of Spring default logback setup -->
-    <include resource="org/springframework/boot/logging/logback/base.xml" />
-    <springProperty scope="context" name="appName" source="spring.application.name"/>
-    <!-- Define FILE_LOG_PATTERN if not already defined - example format below -->
-    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"/>
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <url>http://loki:3100/loki/api/v1/push</url>
-        </http>
-        <format>
-            <label>
-                <pattern>app=${appName},host=${HOSTNAME:-unknown},traceID=%X{traceId:-NONE},level=%level</pattern>
-            </label>
-            <!-- Replace FILE_LOG_PATTERN with an explicit pattern if needed -->
-            <message>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-            </message>
-            <sortByTime>true</sortByTime>
-        </format>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+    <appender name="OPEN_TELEMETRY"
+              class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
     </appender>
-    <!-- Apply the Loki appender to the root logger -->
     <root level="INFO">
-        <appender-ref ref="LOKI"/>
-        <!-- Optionally add CONSOLE appender for debugging -->
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="OPEN_TELEMETRY"/>
     </root>
 </configuration>

@@ -12,7 +12,3 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
 
-management:
-  observations:
-    key-values:
-      application: tourni-discovery-service

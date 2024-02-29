@@ -1,54 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-
-    <include resource="org/springframework/boot/logging/logback/base.xml"/>
-
-    <property name="LOG_DIR" value="/tmp/logs"/>
-
-    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="tourni-discovery-service"/>
-
-    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"/>
-
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <encoder>
-            <pattern>${FILE_LOG_PATTERN}</pattern>
-        </encoder>
-        <file>${LOG_DIR}/${appName}.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_DIR}/${appName}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>10MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+    <appender name="OPEN_TELEMETRY"
+              class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
     </appender>
-
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <url>http://tourni-loki:3100/loki/api/v1/push</url>
-        </http>
-        <format>
-            <label>
-                <pattern>application=${appName:-tourni-discovery-service},host=${HOSTNAME:-localhost},level=%level</pattern>
-            </label>
-            <message>
-                <pattern>${FILE_LOG_PATTERN}</pattern>
-            </message>
-            <sortByTime>true</sortByTime>
-        </format>
-        <batch>
-            <maxItems>500</maxItems>
-            <timeoutMs>30000</timeoutMs>
-            <lingerMs>5000</lingerMs>
-        </batch>
-    </appender>
-
     <root level="INFO">
-        <appender-ref ref="FILE"/>
-        <appender-ref ref="LOKI"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="OPEN_TELEMETRY"/>
     </root>
-
-    <!-- Uncomment below to enable status listener for debugging logging issues -->
-    <!-- <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" /> -->
-
 </configuration>

@@ -1,47 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <include resource="org/springframework/boot/logging/logback/base.xml" />
-
-    <!-- Extract the application name from the spring.application.name property -->
-    <springProperty scope="context" name="appName" source="spring.application.name" />
-
-    <!-- Define a default pattern if FILE_LOG_PATTERN is not set -->
-    <property name="CONSOLE_LOG_PATTERN" value="%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr(%5p) %clr([%t]){faint} %clr(%-40.40logger{39}){cyan} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
-
-    <!-- Console Appender -->
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-        </encoder>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+    <appender name="OPEN_TELEMETRY"
+              class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+        <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
     </appender>
-
-    <!-- Loki Appender -->
-    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-        <http>
-            <!-- This URL should be reachable from within the Docker network -->
-            <url>http://loki:3100/loki/api/v1/push</url>
-        </http>
-        <format>
-            <label>
-                <pattern>app=${appName},host=${HOSTNAME:-unknown},traceID=%X{X-B3-TraceId:-NONE},level=%level</pattern>
-            </label>
-            <message>
-                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-            </message>
-            <sortByTime>true</sortByTime>
-        </format>
-    </appender>
-
-    <!-- Root Logger -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="LOKI"/>
+        <appender-ref ref="OPEN_TELEMETRY"/>
     </root>
-
-    <!-- Application Logger -->
-    <logger name="com.tournament.gateway" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="LOKI"/>
-    </logger>
-
 </configuration>
