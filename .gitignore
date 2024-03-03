@@ -1,5 +1,7 @@
 target/
 
+.data/
+
 .idea/
 logs/
 

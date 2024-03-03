@@ -1,53 +1,204 @@
 version: '3.7'
 services:
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.82.0
-    container_name: otel-collector
-    restart: always
-    command:
-      - --config=/etc/otelcol-cont/otel-collector.yml
-    volumes:
-      - ./docker/collector/otel-collector.yml:/etc/otelcol-cont/otel-collector.yml
+  read:
+    image: grafana/loki:2.9.2
+    container_name: loki-read
+    command: "-config.file=/etc/loki/config.yaml -target=read"
     ports:
-      - "1888:1888" # pprof extension
-      - "8888:8888" # Prometheus metrics exposed by the collector
-      - "8889:8889" # Prometheus exporter metrics
-      - "13133:13133" # health_check extension
-      - "4317:4317" # OTLP gRPC receiver
-      - "4318:4318" # OTLP http receiver
-      - "55679:55679" # zpages extension
+      - 3101:3100
+      - 7946
+      - 9095
+    volumes:
+      - ./docker/loki/loki-config.yaml:/etc/loki/config.yaml
+    depends_on:
+      - minio
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: &loki-dns
+      tourni-network:
+        aliases:
+          - loki
+
+  write:
+    image: grafana/loki:2.9.2
+    container_name: loki-write
+    command: "-config.file=/etc/loki/config.yaml -target=write"
+    ports:
+      - 3102:3100
+      - 7946
+      - 9095
+    volumes:
+      - ./docker/loki/loki-config.yaml:/etc/loki/config.yaml
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - minio
+    networks:
+      <<: *loki-dns
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    container_name: promtail
+    volumes:
+      - ./docker/promtail/promtail-local-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - gateway
+    networks:
+      - tourni-network
+
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /data/loki-data && \
+        mkdir -p /data/loki-ruler && \
+        minio server /data
+    environment:
+      - MINIO_ROOT_USER=loki
+      - MINIO_ROOT_PASSWORD=supersecret
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
+      - MINIO_UPDATE=off
+    ports:
+      - 9000
+    volumes:
+      - ./.data/minio:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 15s
+      timeout: 20s
+      retries: 5
+    networks:
+      - tourni-network
 
   prometheus:
+    image: prom/prometheus:v2.48.0
     container_name: prometheus
-    image: prom/prometheus
-    restart: always
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-    volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - tourni-network
 
   tempo:
-    image: grafana/tempo:latest
-    command: [ "-config.file=/etc/tempo.yml" ]
+    image: grafana/tempo
+    container_name: tempo
+    command: -config.file /etc/tempo-config.yml
+    ports:
+      - "3110:3100"
+      - "4317:4317"
     volumes:
-      - ./docker/tempo/tempo.yml:/etc/tempo.yml
-    ports:
-      - "3200:3200"   # tempo
-      - "4317"  # otlp grpc
-
-  loki:
-    image: grafana/loki:latest
-    command: -config.file=/etc/loki/local-config.yaml
-    ports:
-      - "3100:3100"
+      - ./docker/tempo/tempo.yml:/etc/tempo-config.yml
+    networks:
+      - tourni-network
 
   grafana:
+    image: grafana/grafana:latest
     container_name: grafana
-    image: grafana/grafana
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    depends_on:
+      - gateway
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        /run.sh
     ports:
       - "3000:3000"
+    volumes:
+      - ./docker/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tourni-network
+
+  gateway:
+    image: nginx:latest
+    container_name: gateway
+    depends_on:
+      - read
+      - write
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        cat <<EOF > /etc/nginx/nginx.conf
+        user  nginx;
+        worker_processes  5;  ## Default: 1
+
+        events {
+          worker_connections   1000;
+        }
+
+        http {
+          resolver 127.0.0.11;
+
+          server {
+            listen             3100;
+
+            location = / {
+              return 200 'OK';
+              auth_basic off;
+            }
+
+            location = /api/prom/push {
+              proxy_pass       http://write:3100\$$request_uri;
+            }
+
+            location = /api/prom/tail {
+              proxy_pass       http://read:3100\$$request_uri;
+              proxy_set_header Upgrade \$$http_upgrade;
+              proxy_set_header Connection "upgrade";
+            }
+
+            location ~ /api/prom/.* {
+              proxy_pass       http://read:3100\$$request_uri;
+            }
+
+            location = /loki/api/v1/push {
+              proxy_pass       http://write:3100\$$request_uri;
+            }
+
+            location = /loki/api/v1/tail {
+              proxy_pass       http://read:3100\$$request_uri;
+              proxy_set_header Upgrade \$$http_upgrade;
+              proxy_set_header Connection "upgrade";
+            }
+
+            location ~ /loki/api/.* {
+              proxy_pass       http://read:3100\$$request_uri;
+            }
+          }
+        }
+        EOF
+        /docker-entrypoint.sh nginx -g "daemon off;"
+    ports:
+      - "3100:3100"
+    healthcheck:
+      test: [ "CMD", "service", "nginx", "status" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tourni-network
 
   tourni-mysql:
     container_name: tourni-mysql
@@ -70,11 +221,14 @@ services:
     container_name: tourni-config-server
     ports:
       - "8890:8888"
-    depends_on:
-      - prometheus
-      - loki
-      - tempo
-      - grafana
+    healthcheck:
+      test: "curl --fail --silent localhost:8090/actuator/health/readiness | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    environment:
+      OTEL_SERVICE_NAME: "tourni-config-server"
     networks:
       - tourni-network
 
@@ -85,18 +239,15 @@ services:
       - "8761:8761"
     depends_on:
       - tourni-config-server
-      - prometheus
-      - loki
-      - tempo
-      - grafana
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://tourni-discovery-service:8761/actuator/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      test: "curl --fail --silent localhost:8761/actuator/health/readiness | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     environment:
       CONFIG_SERVICE_HOST: tourni-config-server
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
 
@@ -105,18 +256,21 @@ services:
     container_name: tourni-gateway
     ports:
       - "8080:8080"
-      - "8089:8089"
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     depends_on:
       - tourni-discovery-service
       - tourni-config-server
-      - prometheus
-      - loki
-      - tempo
-      - grafana
     environment:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
+      OTEL_SERVICE_NAME: "tourni-gateway"
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
 
@@ -129,10 +283,12 @@ services:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-config-server
-      - prometheus
-      - loki
-      - tempo
-      - grafana
+    healthcheck:
+      test: "curl --fail --silent localhost:8082/actuator/health/readiness | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -143,6 +299,7 @@ services:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
 
@@ -156,10 +313,12 @@ services:
       - tourni-discovery-service
       - tourni-identity-service
       - tourni-config-server
-      - prometheus
-      - loki
-      - tempo
-      - grafana
+    healthcheck:
+      test: "curl --fail --silent localhost:8083/actuator/health/readiness | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -169,7 +328,8 @@ services:
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
-      CONFIG_SERVICE_HOST: tourni-config-server
+      CONFIG_SERVICE_HOST: tourni-management
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
 
@@ -182,10 +342,12 @@ services:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-config-server
-      - prometheus
-      - loki
-      - tempo
-      - grafana
+    healthcheck:
+      test: "curl --fail --silent localhost:8084/actuator/health/readiness | grep UP || exit 1"
+      interval: 20s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://tourni-mysql:3306/tournament_db
       MYSQL_HOST: tourni-mysql
@@ -194,6 +356,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       CONFIG_SERVICE_HOST: tourni-config-server
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
 

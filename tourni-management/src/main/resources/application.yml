@@ -7,7 +7,4 @@ spring:
 server:
   port: 0
 
-management:
-  observations:
-    key-values:
-      application: tourni-management
+
