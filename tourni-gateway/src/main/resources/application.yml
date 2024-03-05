@@ -13,10 +13,6 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        - id: actuator-endpoints
-          uri: lb://tourni-gateway
-          predicates:
-            - Path=/actuator/**
         - id: tourni-management
           uri: lb://tourni-management
           predicates:
@@ -41,5 +37,10 @@ spring:
           uri: lb://tourni-identity-service
           predicates:
             - Path=/api/v1/auth/**
+
+management:
+  endpoint:
+    gateway:
+      enabled: true
 
 

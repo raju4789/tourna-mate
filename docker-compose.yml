@@ -223,12 +223,15 @@ services:
       - "8890:8888"
     healthcheck:
       test: "curl --fail --silent localhost:8090/actuator/health/readiness | grep UP || exit 1"
-      interval: 20s
+      interval: 30s
       timeout: 5s
-      retries: 20
-      start_period: 10s
+      retries: 30
     environment:
-      OTEL_SERVICE_NAME: "tourni-config-server"
+      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
+      OTEL_SERVICE_NAME: tourni-config-server
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_METRICS_EXPORTER: none
     networks:
       - tourni-network
 
@@ -248,6 +251,10 @@ services:
     environment:
       CONFIG_SERVICE_HOST: tourni-config-server
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
+      OTEL_SERVICE_NAME: tourni-discovery-service
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_METRICS_EXPORTER: none
     networks:
       - tourni-network
 
@@ -265,11 +272,15 @@ services:
     depends_on:
       - tourni-discovery-service
       - tourni-config-server
+      - prometheus
     environment:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
-      OTEL_SERVICE_NAME: "tourni-gateway"
+      OTEL_SERVICE_NAME: tourni-gateway
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_METRICS_EXPORTER: none
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
     networks:
       - tourni-network
@@ -283,6 +294,7 @@ services:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-config-server
+      - prometheus
     healthcheck:
       test: "curl --fail --silent localhost:8082/actuator/health/readiness | grep UP || exit 1"
       interval: 20s
@@ -300,6 +312,10 @@ services:
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
+      OTEL_SERVICE_NAME: tourni-identity-service
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_METRICS_EXPORTER: none
     networks:
       - tourni-network
 
@@ -313,6 +329,7 @@ services:
       - tourni-discovery-service
       - tourni-identity-service
       - tourni-config-server
+      - prometheus
     healthcheck:
       test: "curl --fail --silent localhost:8083/actuator/health/readiness | grep UP || exit 1"
       interval: 20s
@@ -328,8 +345,11 @@ services:
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
-      CONFIG_SERVICE_HOST: tourni-management
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
+      OTEL_SERVICE_NAME: tourni-management
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_METRICS_EXPORTER: none
     networks:
       - tourni-network
 
@@ -342,6 +362,7 @@ services:
       - tourni-mysql
       - tourni-discovery-service
       - tourni-config-server
+      - prometheus
     healthcheck:
       test: "curl --fail --silent localhost:8084/actuator/health/readiness | grep UP || exit 1"
       interval: 20s
@@ -349,14 +370,16 @@ services:
       retries: 20
       start_period: 10s
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://tourni-mysql:3306/tournament_db
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
-      SPRING_DATASOURCE_USERNAME: tournament_admin
-      SPRING_DATASOURCE_PASSWORD: tournament@2023
+      MYSQL_USER: tournament_admin
+      MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
-      CONFIG_SERVICE_HOST: tourni-config-server
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
+      OTEL_SERVICE_NAME: tourni-ai
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_METRICS_EXPORTER: none
     networks:
       - tourni-network
 
