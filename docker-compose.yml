@@ -226,12 +226,19 @@ services:
       interval: 30s
       timeout: 5s
       retries: 30
+      start_period: 10s
+    volumes:
+      - ./docker/otel/opentelemetry-javaagent.jar:/app/libs/opentelemetry-javaagent.jar
     environment:
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
       OTEL_SERVICE_NAME: tourni-config-server
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent.jar"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
       OTEL_METRICS_EXPORTER: none
+    depends_on:
+      - prometheus
+      - tempo
+      - grafana
     networks:
       - tourni-network
 
@@ -242,6 +249,11 @@ services:
       - "8761:8761"
     depends_on:
       - tourni-config-server
+      - prometheus
+      - tempo
+      - grafana
+    volumes:
+      - ./docker/otel/opentelemetry-javaagent.jar:/app/libs/opentelemetry-javaagent.jar
     healthcheck:
       test: "curl --fail --silent localhost:8761/actuator/health/readiness | grep UP || exit 1"
       interval: 20s
@@ -252,7 +264,7 @@ services:
       CONFIG_SERVICE_HOST: tourni-config-server
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
       OTEL_SERVICE_NAME: tourni-discovery-service
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent.jar"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
       OTEL_METRICS_EXPORTER: none
     networks:
@@ -273,12 +285,16 @@ services:
       - tourni-discovery-service
       - tourni-config-server
       - prometheus
+      - tempo
+      - grafana
+    volumes:
+      - ./docker/otel/opentelemetry-javaagent.jar:/app/libs/opentelemetry-javaagent.jar
     environment:
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       EUREKA.CLIENT.FETCH-REGISTRY: true
       CONFIG_SERVICE_HOST: tourni-config-server
       OTEL_SERVICE_NAME: tourni-gateway
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent.jar"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
       OTEL_METRICS_EXPORTER: none
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
@@ -295,12 +311,16 @@ services:
       - tourni-discovery-service
       - tourni-config-server
       - prometheus
+      - tempo
+      - grafana
     healthcheck:
       test: "curl --fail --silent localhost:8082/actuator/health/readiness | grep UP || exit 1"
       interval: 20s
       timeout: 5s
       retries: 20
       start_period: 10s
+    volumes:
+      - ./docker/otel/opentelemetry-javaagent.jar:/app/libs/opentelemetry-javaagent.jar
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -313,7 +333,7 @@ services:
       CONFIG_SERVICE_HOST: tourni-config-server
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
       OTEL_SERVICE_NAME: tourni-identity-service
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent.jar"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
       OTEL_METRICS_EXPORTER: none
     networks:
@@ -330,12 +350,16 @@ services:
       - tourni-identity-service
       - tourni-config-server
       - prometheus
+      - tempo
+      - grafana
     healthcheck:
       test: "curl --fail --silent localhost:8083/actuator/health/readiness | grep UP || exit 1"
       interval: 20s
       timeout: 5s
       retries: 20
       start_period: 10s
+    volumes:
+      - ./docker/otel/opentelemetry-javaagent.jar:/app/libs/opentelemetry-javaagent.jar
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
@@ -347,7 +371,7 @@ services:
       EUREKA.CLIENT.FETCH-REGISTRY: true
       MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
       OTEL_SERVICE_NAME: tourni-management
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent.jar"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
       OTEL_METRICS_EXPORTER: none
     networks:
@@ -363,21 +387,23 @@ services:
       - tourni-discovery-service
       - tourni-config-server
       - prometheus
+      - tempo
+      - grafana
+    volumes:
+      - ./docker/otel/opentelemetry-javaagent.jar:/app/libs/opentelemetry-javaagent.jar
     healthcheck:
       test: "curl --fail --silent localhost:8084/actuator/health/readiness | grep UP || exit 1"
-      interval: 20s
+      interval: 30s
       timeout: 5s
-      retries: 20
-      start_period: 10s
+      retries: 30
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
       MYSQL_USER: tournament_admin
       MYSQL_PASSWORD: tournament@2023
       EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
-      MANAGEMENT.ZIPKIN.TRACING.ENDPOINT: http://tempo:9411/api/v2/spans
       OTEL_SERVICE_NAME: tourni-ai
-      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent-1.32.0.jar"
+      JAVA_TOOL_OPTIONS: "-javaagent:/app/libs/opentelemetry-javaagent.jar"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
       OTEL_METRICS_EXPORTER: none
     networks:
