@@ -5,7 +5,7 @@ spring:
   application:
     name: tourni-gateway
   config:
-    import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
+    import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
   cloud:
     gateway:
       discovery:
@@ -39,6 +39,8 @@ spring:
             - Path=/api/v1/auth/**
 
 management:
+  server:
+    port: 8091
   endpoint:
     gateway:
       enabled: true

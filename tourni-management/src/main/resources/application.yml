@@ -2,7 +2,7 @@ spring:
   application:
     name: tourni-management
   config:
-    import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
+    import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
 
 server:
   port: 0
