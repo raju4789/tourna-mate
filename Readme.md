@@ -47,11 +47,18 @@ The architecture diagram below provides a visual representation of how each micr
 
 Our platform uses Grafana for analytics and monitoring visualization, Loki for log aggregation, Prometheus for system monitoring, and Tempo for distributed tracing to maintain a high level of performance and reliability.
 
-## Getting Started
 
 ### Prerequisites
 
 - Docker & Docker Compose
 
 ### Building the Services
+
+```
+
+cd docker
+
+docker-compose up -d
+
+```
 
