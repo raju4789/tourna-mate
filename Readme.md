@@ -52,7 +52,7 @@ Our platform uses Grafana for analytics and monitoring visualization, Loki for l
 
 - Docker & Docker Compose
 
-### Building the Services
+### Building the Micro Services in local :
 
 ```
 
