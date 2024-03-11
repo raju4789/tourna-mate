@@ -5,6 +5,6 @@ spring:
   application:
     name: tourni-identity-service
   config:
-    import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8890
+    import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
 
 
