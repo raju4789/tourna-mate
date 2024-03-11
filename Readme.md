@@ -13,32 +13,32 @@ The architecture diagram below provides a visual representation of how each micr
 
 ## Microservices
 
-### TOURNI-UI
+### TOURNI-UI :
 
 - A React application that leverages Hooks for state management and Material-UI for styling. It utilizes TypeScript for type safety and Axios for making HTTP requests.
 
 
-### TOURNI-GATEWAY
+### TOURNI-GATEWAY :
 
 - Routes incoming HTTP requests to the appropriate backend service, using Spring Cloud Gateway for intelligent routing and load balancing.
 
 
-### TOURNI-CONFIG-SERVER
+### TOURNI-CONFIG-SERVER :
 
 - Centralizes and manages external configurations for microservices, pulling from the TOURNI-CONFIG repository on GitHub.
 
 
-### TOURNI-IDENTITY-SERVICE
+### TOURNI-IDENTITY-SERVICE :
 
 - Handles user registration, login, and secure endpoint access with JWT tokens for stateless authentication.
 
 
-### TOURNI-MANAGEMENT
+### TOURNI-MANAGEMENT :
 
 - Facilitates various operations such as team and tournament addition, match result management, and points table management.
 
 
-### TOURNI-AI(IN-PROGRESS)
+### TOURNI-AI (IN-PROGRESS) :
 
 -  Enhances the tournament experience by providing strategic insights using OpenAI's GPT technology.
 
