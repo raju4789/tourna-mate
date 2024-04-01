@@ -8,7 +8,7 @@ TOURNA-MATE is an all-encompassing tournament management system tailored for eff
 
 The architecture diagram below provides a visual representation of how each microservice within TOURNA-MATE interacts to deliver a cohesive user experience:
 
-![Screenshot from 2024-03-11 17-24-27](https://github.com/raju4789/tourna-mate/assets/9479811/354c7dcd-37d0-47ba-82b0-1c26ab5423ac)
+![Tournamate_Design_F](https://github.com/raju4789/tourna-mate/assets/9479811/af16cca4-9e33-4e5d-b28e-70d09bb337d9)
 
 
 ## Microservices
