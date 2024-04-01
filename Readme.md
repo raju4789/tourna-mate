@@ -10,6 +10,7 @@ The architecture diagram below provides a visual representation of how each micr
 
 ![Tournamate_Design_F (1)](https://github.com/raju4789/tourna-mate/assets/9479811/6a9b1fef-e624-44a6-9c6b-e8f50a9fe05d)
 
+
 ## Key Highlights
 
 1. Built with Microservice architecture pattern using Java Spring Boot 3.x for backend.
@@ -23,6 +24,13 @@ The architecture diagram below provides a visual representation of how each micr
 9. Docker for building microservices.
 10. Swagger for documentation.
 
+
+## Some UI Screeshots for reference:
+![Screenshot from 2024-04-01 21-03-33](https://github.com/raju4789/tourna-mate/assets/9479811/ec8ad075-182a-443f-8455-c382791b893b)
+![Screenshot from 2024-04-01 21-02-35](https://github.com/raju4789/tourna-mate/assets/9479811/5dd5c7fc-768e-4616-9824-9b2315bc8661)
+![Screenshot from 2024-04-01 21-01-58](https://github.com/raju4789/tourna-mate/assets/9479811/8c7d8cba-e109-4893-9770-6a2544baf064)
+![Screenshot from 2024-04-01 21-01-32](https://github.com/raju4789/tourna-mate/assets/9479811/406f78d1-26ea-4834-902d-5c9a04e5552a)
+![Screenshot from 2024-04-01 21-00-54](https://github.com/raju4789/tourna-mate/assets/9479811/4e366d35-572f-4279-9c00-1b953a0a5342)
 
 
 ## Microservices
