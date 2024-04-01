@@ -15,7 +15,7 @@ The architecture diagram below provides a visual representation of how each micr
 
 1. Built with Microservice architecture pattern using Java Spring Boot 3.x for backend.
 2. Used React JS , Typescript and Material UI for front end development.
-3. Implemented authentication using JWT token and Spring Security.
+3. Implemented authentication using JWT token and Spring Security and Role based authorization.
 4. Netflix Eureka server for Service discovery.
 5. Spring cloud Gateway for API gateway.
 6. Spring Data JPA for database operations.
