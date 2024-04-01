@@ -226,7 +226,7 @@ services:
     ports:
       - "8890:8888"
     healthcheck:
-      test: "curl --fail --silent localhost:8090/actuator/health/readiness | grep UP || exit 1"
+      test: "curl --fail --silent localhost:8888/actuator/health/readiness | grep UP || exit 1"
       interval: 30s
       timeout: 5s
       retries: 30
@@ -272,10 +272,10 @@ services:
       - tempo
       - grafana
     healthcheck:
-      test: "curl --fail --silent localhost:8082/actuator/health/readiness | grep UP || exit 1"
+      test: "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"
       interval: 20s
       timeout: 5s
-      retries: 20
+      retries: 30
       start_period: 10s
     environment:
       EUREKA.CLIENT.FETCH-REGISTRY: true
@@ -290,9 +290,8 @@ services:
       - "8083:8080"
     depends_on:
       - tourni-mysql
-      - tourni-discovery-service
-      - tourni-identity-service
       - tourni-config-server
+      - tourni-discovery-service
       - prometheus
       - tempo
       - grafana

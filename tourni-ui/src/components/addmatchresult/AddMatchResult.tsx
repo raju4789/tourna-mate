@@ -234,6 +234,7 @@ const AddMatchResult = () => {
             <StyledTextField
               label="Team Two Overs Played"
               type="number"
+              inputProps={{ step: '0.1', pattern: '\\d+(\\.\\d{1})?' }} // Specify step and pattern attributes
               {...register('teamTwoOversPlayed', { required: true })}
               error={!!errors.teamTwoOversPlayed}
               helperText={errors.teamTwoOversPlayed && 'Team Two Overs Played is required'}
