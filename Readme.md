@@ -10,6 +10,9 @@ The architecture diagram below provides a visual representation of how each micr
 
 ![Tournamate_Design_F (1)](https://github.com/raju4789/tourna-mate/assets/9479811/6a9b1fef-e624-44a6-9c6b-e8f50a9fe05d)
 
+## DB Design
+![image](https://github.com/raju4789/tourna-mate/assets/9479811/224316b4-42cf-4b6d-a430-ca273b0af790)
+
 
 ## Key Highlights
 
