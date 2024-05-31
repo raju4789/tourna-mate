@@ -81,7 +81,8 @@ cd docker
 docker-compose up -d
 
 ## Contributing
-We welcome contributions to TOURNA-MATE! If you have suggestions for improvements or have found a bug, please open an issue or submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
+We welcome contributions to TOURNA-MATE! If you have suggestions for improvements or have found a bug,
+please open an issue or submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
 
 ### Steps to Contribute
 1. Fork the repository.
