@@ -12,7 +12,8 @@ The architecture diagram below illustrates how each microservice within TOURNA-M
 
 ## Database Design
 
-![image](https://github.com/raju4789/tourna-mate/assets/9479811/224316b4-42cf-4b6d-a430-ca273b0af790)
+<img width="623" alt="Screenshot 2567-05-30 at 10 20 41" src="https://github.com/raju4789/tourna-mate/assets/9479811/f062c36f-7f68-4826-a5fe-39e72e3bf287">
+
 
 ## Key Highlights
 
