@@ -13,6 +13,8 @@ import com.tournament.management.observers.TeamStatsObserver;
 import com.tournament.management.repository.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -55,7 +57,9 @@ public class TourniManagementServiceImpl implements TourniManagementService {
 
     }
 
+
     @Override
+    @Cacheable(value="pointsTableByTournamentId", key="#tournamentId")
     public PointsTableByTournamentResponse getPointsTableByTournamentId(Long tournamentId) throws RecordNotFoundException {
 
         List<PointsTable> pointsTableList = pointsTableRepository.findByTournamentId(tournamentId)
@@ -82,6 +86,7 @@ public class TourniManagementServiceImpl implements TourniManagementService {
     }
 
     @Override
+    @CacheEvict(value="pointsTableByTournamentId", key = "#addMatchResultRequest.tournamentId")
     public void addMatchResult(AddMatchResultRequest addMatchResultRequest) {
 
         MatchResult matchResult = tournamentManagementMappers.mapMatchResultRequestDTOToMatchResult(addMatchResultRequest);
@@ -103,6 +108,7 @@ public class TourniManagementServiceImpl implements TourniManagementService {
     }
 
     @Override
+    @Cacheable(value="teamsByTournamentId", key="#tournamentId")
     public List<TeamDTO> getAllTeamsByTournamentId(Long tournamentId) {
 
         List<Long> teamIds = teamToTournamentMappingRepository.getTeamIdsByTournamentId(tournamentId)
