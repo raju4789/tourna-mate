@@ -24,7 +24,7 @@ The architecture diagram below illustrates how each microservice within TOURNA-M
 5. **API Gateway**: Managed by Spring Cloud Gateway.
 6. **Database Operations**: Handled by Spring Data JPA.
 7. **Configuration Management**: Centralized using Spring Config Server.
-8. ** Caching**: Enabled caching to improve performance
+8. **Caching**: Enabled caching to improve performance
 9. **Observability**: 
    - **Grafana**: For analytics and monitoring visualization.
    - **Loki**: For log aggregation.
