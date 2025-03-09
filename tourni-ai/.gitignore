@@ -1,0 +1,9 @@
+target/
+
+### IntelliJ IDEA ###
+.idea/
+
+*.log
+
+### Mac OS ###
+.DS_Store

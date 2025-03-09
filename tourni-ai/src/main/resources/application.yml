@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: tourni-ai
+  config:
+    import: configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
+
+server:
+  port: 0
+
+
+
+

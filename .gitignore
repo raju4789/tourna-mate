@@ -1,0 +1,12 @@
+target/
+
+.data/
+
+.idea/
+logs/
+
+*.log
+
+docker/.data/
+
+mysql_tournament_data/

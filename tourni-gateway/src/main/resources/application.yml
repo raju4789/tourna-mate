@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: tourni-gateway
+  config:
+    import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: tourni-management
+          uri: lb://tourni-management
+          predicates:
+            - Path=/api/v1/manage/**
+        - id: tourni-ai
+          uri: lb://tourni-ai
+          predicates:
+            - Path=/api/v1/ai/**
+          filters:
+            - AuthenticationFilter
+        - id: tourni-discovery-service
+          uri: http://tourni-discovery-service:8761
+          predicates:
+            - Path=/eureka/web
+          filters:
+            - SetPath=/
+        - id: tourni-discovery-service-static
+          uri: http://tourni-discovery-service:8761
+          predicates:
+            - Path=/eureka/**
+        - id: tourni-identity-service
+          uri: lb://tourni-identity-service
+          predicates:
+            - Path=/api/v1/auth/**
+
+management:
+  server:
+    port: 8091
+  endpoint:
+    gateway:
+      enabled: true
+
+

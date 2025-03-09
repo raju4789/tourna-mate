@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: tourni-management
+  config:
+    import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
+  jpa:
+    hibernate:
+      ddl-auto: update
+    defer-datasource-initialization: true
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/tournament_db
+    username: ${MYSQL_USER:tournament_admin}
+    password: ${MYSQL_PASSWORD:tournament@2023}
+  sql:
+    init:
+      mode: always
+server:
+  port: 0
+
+
