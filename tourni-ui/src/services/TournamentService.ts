@@ -1,5 +1,4 @@
 import axios, { AxiosResponse } from 'axios';
-import { parse } from 'path';
 import {
   IAddMatchResultRequest,
   ICommonApiResponse, IMatchResult, IPointsTableResponse, ITeam, ITournament,

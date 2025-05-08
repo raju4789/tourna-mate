@@ -1,0 +1,14 @@
+# bootstrap.yml
+
+spring:
+  application:
+    name: tourni-management
+  cloud:
+    config:
+      uri: http://${CONFIG_SERVICE_HOST:localhost}:8888
+      fail-fast: true
+      retry:
+        max-attempts: 12  # maximum number of retries
+        initial-interval: 1000  # initial interval between retries in milliseconds, defaults to 1000ms or 1s
+        max-interval: 20000  # maximum interval between retries in milliseconds
+        multiplier: 1.5  # multiplier to calculate the next interval

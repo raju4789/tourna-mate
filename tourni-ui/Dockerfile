@@ -1,18 +1,32 @@
-# Use an official Node runtime as a parent image
-FROM node:18-alpine AS BUILD_IMAGE
+# ----------- Build Stage -----------
+FROM node:18-alpine AS builder
 
-# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package.json ./
+# Install dependencies using npm ci for clean, reproducible builds
+COPY package*.json ./
+RUN npm ci
 
-# Install project dependencies
-RUN npm install
-
-# Copy the rest of your app's source code
+# Copy the rest of your source code
 COPY . .
 
-EXPOSE 8000
+# Build the Vite app for production
+RUN npm run build
 
-CMD ["npm", "run", "dev"]
+# ----------- Production Stage -----------
+FROM nginx:1.25-alpine AS production
+
+# Remove default nginx static assets
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy built assets from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy custom nginx config for SPA routing
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestController {
 
     private Logger logger = LoggerFactory.getLogger(TestController.class);
+
     @GetMapping("/test")
     public String test() {
         logger.info("TestController.test() called");

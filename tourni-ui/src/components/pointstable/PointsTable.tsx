@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   MenuItem, InputLabel, ThemeProvider,
 } from '@mui/material';
+
+import { SelectChangeEvent } from '@mui/material/Select';
 import { GridColDef } from '@mui/x-data-grid';
 import { AxiosResponse } from 'axios';
 import log from 'loglevel';
@@ -74,8 +76,8 @@ const PointsTable: React.FC = () => {
     fetchTournaments();
   }, []);
 
-  const handleTournamentChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    const tournamentId = event.target.value as number;
+  const handleTournamentChange = (event: SelectChangeEvent<unknown>, _child?: React.ReactNode) => {
+    const tournamentId = Number(event.target.value);
     setSelectedTournamentId(tournamentId);
     fetchPointsTable(tournamentId);
   };

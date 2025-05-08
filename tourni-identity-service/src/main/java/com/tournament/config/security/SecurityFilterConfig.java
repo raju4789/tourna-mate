@@ -24,6 +24,9 @@ public class SecurityFilterConfig {
                                 .requestMatchers(new AntPathRequestMatcher("/swagger-ui/**")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/v3/api-docs/**")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/actuator/info")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/actuator/health")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/actuator/health/**")).permitAll()
+
                 );
 
         return httpSecurity.build();

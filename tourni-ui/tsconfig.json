@@ -20,6 +20,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", ".eslintrc.cjs", "logger.ts", "vite.config.ts"],
+  "include": ["src", ".eslintrc.cjs", "logger.ts"],
+  "exclude": ["vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

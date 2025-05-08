@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { AxiosResponse } from 'axios';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
+import { SelectChangeEvent } from '@mui/material/Select';
 import { addMatchResult, getAllTeams, getAllTournaments } from '../../services/TournamentService';
 import {
   ICommonApiResponse, IErrorDetails, IMatchResult, ITeam, ITournament,
@@ -15,6 +16,8 @@ import {
   StyledFormControl, StyledTextField, StyledGrid, StyledPaper, StyledSelect, StyledFormRow,
   HeaderGrid, StyledAvatar, StyledForm, StyledFormHelperText, HeaderText, ButtonBox, ErrorMessageSection, StyledButton,
 } from './AddMatchResult.styled';
+
+
 
 const AddMatchResult = () => {
   const matchResultStatusOptions = [
@@ -72,10 +75,10 @@ const AddMatchResult = () => {
     fetchTournaments();
   }, []);
 
-  const onTournamentChange = async (event: React.ChangeEvent<{ value: number }>) => {
-    const tournamentId = event.target.value as number;
-    await fetchTeams(tournamentId);
-  };
+    const onTournamentChange = (event: SelectChangeEvent<unknown>, _child?: React.ReactNode) => {
+      const tournamentId = Number(event.target.value);
+      fetchTeams(tournamentId);
+    };
 
   const saveMatchResult = async (data: IMatchResult) => {
     const response: AxiosResponse<ICommonApiResponse<string>> = await addMatchResult(data);

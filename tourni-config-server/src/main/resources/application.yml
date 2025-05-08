@@ -9,3 +9,36 @@ spring:
 
 server:
     port: 8888
+
+eureka:
+    client:
+        service-url:
+            defaultZone: http://tourni-discovery-service:8761/eureka/
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: ["health", "info", "metrics", "prometheus"]
+    health:
+        readiness-state:
+            enabled: true
+        liveness-state:
+            enabled: true
+    endpoint:
+        shutdown:
+            enabled: true
+        health:
+            probes:
+                enabled: true
+    info:
+        env:
+            enabled: true
+    metrics:
+        tags:
+            application: ${spring.application.name}
+
+
+    logging:
+        pattern:
+            level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"
