@@ -1,3 +1,4 @@
+# docker/common-config.yml
 services:
   tourni-deploy-service:
     networks:
@@ -6,16 +7,11 @@ services:
   tourni-base-config:
     extends:
       service: tourni-deploy-service
-    deploy:
-      resources:
-        limits:
-          memory: 700m
     environment:
       MYSQL_HOST: tourni-mysql
       MYSQL_PORT: 3306
       MYSQL_DATABASE: tournament_db
       MYSQL_USER: tournament_admin
       MYSQL_PASSWORD: tournament@2023
-      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       CONFIG_SERVICE_HOST: tourni-config-server
-
