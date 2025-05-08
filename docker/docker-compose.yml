@@ -23,19 +23,6 @@ services:
       file: common-config.yml
       service: tourni-base-config
 
-  mysqld-exporter:
-    image: prom/mysqld-exporter
-    container_name: mysqld-exporter
-    environment:
-      DATA_SOURCE_NAME: "tournament_admin:tournament@2023@(tourni-mysql:3306)/"
-    ports:
-      - "9104:9104"
-    depends_on:
-      - tourni-mysql
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
-
   tourni-discovery-service:
     build:
       context: ../
