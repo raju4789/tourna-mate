@@ -203,6 +203,61 @@ services:
       file: common-config.yml
       service: tourni-base-config
 
+  # Prometheus Service
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    extends:
+      file: common-config.yml
+      service: tourni-base-config
+
+  ## Tempo Service
+  tempo:
+    image: grafana/tempo
+    container_name: tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ../observability/tempo/tempo.yml:/etc/tempo.yaml:ro
+      - ../observability/tempo/tempo-data:/tmp/tempo
+    ports:
+      - "3200:3200" # Tempo
+      - "9411:9411" # zipkin
+    extends:
+      file: common-config.yml
+      service: tourni-base-config
+
+  #loki Service
+  loki:
+    image: grafana/loki:main
+    container_name: loki
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
+    ports:
+      - "3100:3100"
+    extends:
+      file: common-config.yml
+      service: tourni-base-config
+
+  # Grafana Service
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../observability/grafana:/etc/grafana/provisioning/datasources:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    extends:
+      file: common-config.yml
+      service: tourni-base-config
+
 volumes:
   mysql-database-data-volume:
 
