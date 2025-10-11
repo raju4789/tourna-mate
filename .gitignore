@@ -10,3 +10,67 @@ logs/
 docker/.data/
 
 mysql_tournament_data/
+
+# =============================================================================
+# SECRETS - NEVER COMMIT THESE FILES!
+# =============================================================================
+# Environment-specific secret files
+docker/secrets/.env.dev
+docker/secrets/.env.staging
+docker/secrets/.env.prod
+docker/secrets/.env
+
+# Keep the template file
+!docker/secrets/.env.example
+
+# Vault data (all environments)
+docker/vault-data/
+docker/data/
+
+# Observability runtime data
+observability/tempo/tempo-data/
+observability/tempo/data/
+observability/prometheus/data/
+observability/grafana/data/
+observability/loki/data/
+observability/**/*.db
+observability/**/*.log
+
+# Docker volumes for all environments
+docker/.data/
+mysql_tournament_data/
+
+# Environment-specific Docker volumes
+*mysql-data-dev*
+*mysql-data-staging*
+*mysql-data-prod*
+*vault-data-dev*
+*vault-data-staging*
+*vault-data-prod*
+*vault-secrets-dev*
+*vault-secrets-staging*
+*vault-secrets-prod*
+*prometheus-data-dev*
+*prometheus-data-staging*
+*prometheus-data-prod*
+*grafana-data-dev*
+*grafana-data-staging*
+*grafana-data-prod*
+*loki-data-dev*
+*loki-data-staging*
+*loki-data-prod*
+*tempo-data-dev*
+*tempo-data-staging*
+*tempo-data-prod*
+
+# Any file with "secret" or "password" in the name
+*secret*
+*password*
+*.key
+*.pem
+
+# Except for template files
+!*.example
+!*-template*
+
+.vscode/

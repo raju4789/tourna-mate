@@ -1,0 +1,57 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# IDE files
+.idea
+.vscode
+.DS_Store
+*.iml
+*.swp
+*.swo
+
+# Build artifacts
+**/target/
+**/build/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Documentation
+README.md
+*.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Docker files (no need to include in build context)
+**/Dockerfile
+**/.dockerignore
+docker-compose*.yml
+
+# Observability data (don't copy into container)
+observability/tempo/tempo-data/
+observability/grafana/data/
+
+# Scripts
+*.sh
+
+# Environment files
+.env
+.env.*
+**/*.env
+
+# Node modules (for UI)
+**/node_modules/
+**/dist/
+
+# Logs
+**/*.log
+**/logs/
+
+# Temporary files
+**/*.tmp
+**/*.temp
+**/tmp/
+

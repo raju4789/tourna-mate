@@ -26,6 +26,9 @@ public class SecurityFilterConfig {
                                 .requestMatchers(new AntPathRequestMatcher("/actuator/info")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/actuator/health")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/actuator/health/**")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/actuator/prometheus")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/actuator/metrics")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/actuator/metrics/**")).permitAll()
 
                 );
 

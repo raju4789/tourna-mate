@@ -1,87 +1,87 @@
 -- Tournament Type
-INSERT IGNORE INTO tournament_db.tournament_type(tournament_type_id, tournament_type, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO tournament_type(tournament_type_id, tournament_type, record_created_date, record_created_by, is_active)
 VALUES(1, 'cricket', CURRENT_DATE(), "admin", true);
 
 -- Tournaments
-INSERT IGNORE INTO tournament_db.tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
 VALUES(101, 1, 'Cricket World Cup 2023', 'Cricket World Cup', 2023, 50, CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
 VALUES(102, 1, 'IPL 2023', 'Indian Premier League', 2023, 20, CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
 VALUES(103, 1, 'Cricket World Cup 2024', 'Cricket World Cup', 2024, 50, CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO tournament(tournament_id, tournament_type_id, tournament_name, tournament_description, tournament_year, maximum_overs_per_match, record_created_date, record_created_by, is_active)
 VALUES(104, 1, 'IPL 2024', 'Indian Premier League', 2024, 20, CURRENT_DATE(), "admin", true);
 
 
 -- Teams
 
 -- Team by franchise
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1111, 'Chennai Super Kings', 'Chennai Super Kings', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1112, 'Mumbai Indians', 'Mumbai Indians', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1113, 'Royal Challengers Bangalore', 'Royal Challengers Bangalore', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1114, 'Kolkata Knight Riders', 'Kolkata Knight Riders', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1115, 'Sunrisers Hyderabad', 'Sunrisers Hyderabad', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1116, 'Rajasthan Royals', 'Rajasthan Royals', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1117, 'Delhi Capitals', 'Delhi Capitals', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1118, 'Punjab Kings', 'Punjab Kings', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1119, 'Lucknow Super Giants', 'Lucknow Super Giants', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1120, 'Gujarat Titans', 'Gujarat Titans', CURRENT_DATE(), "admin", true);
 
 -- Teams by country
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1101, 'India', 'Indian Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1102, 'Australia', 'Australian Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1103, 'England', 'England Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1104, 'South Africa', 'South African Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1105, 'New Zealand', 'New Zealand Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1106, 'Pakistan', 'Pakistan Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1107, 'Sri Lanka', 'Sri Lankan Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1108, 'Afghanistan', 'Afghanistan Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1109, 'Bangladesh', 'Bangladesh Cricket Team', CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team(team_id, team_name, team_owner, record_created_date, record_created_by, is_active)
 VALUES (1110, 'Netherlands', 'Netherlands Cricket Team', CURRENT_DATE(), "admin", true);
 
 -- Team To Tournament Mapping
-INSERT IGNORE INTO tournament_db.team_to_tournament_mapping(mapping_id, team_id, tournament_id, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team_to_tournament_mapping(mapping_id, team_id, tournament_id, record_created_date, record_created_by, is_active)
 VALUES
   (501, 1111, 102, CURRENT_DATE(), "admin", true),
   (502, 1112, 102, CURRENT_DATE(), "admin", true),
@@ -104,7 +104,7 @@ VALUES
   (519, 1109, 101, CURRENT_DATE(), "admin", true),
   (520, 1110, 101, CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team_to_tournament_mapping(mapping_id, team_id, tournament_id, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team_to_tournament_mapping(mapping_id, team_id, tournament_id, record_created_date, record_created_by, is_active)
 VALUES
   (521, 1111, 104, CURRENT_DATE(), "admin", true),
   (522, 1112, 104, CURRENT_DATE(), "admin", true),
@@ -129,7 +129,7 @@ VALUES
 
 
 -- Team Stats
-INSERT IGNORE INTO tournament_db.team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
 VALUES
   (301, 1101, 101, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (302, 1102, 101, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
@@ -142,7 +142,7 @@ VALUES
   (309, 1109, 101, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (310, 1110, 101, 0, 0, 0, 0, CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
 VALUES
   (321, 1101, 103, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (322, 1102, 103, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
@@ -155,7 +155,7 @@ VALUES
   (329, 1109, 103, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (330, 1110, 103, 0, 0, 0, 0, CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
 VALUES
   (311, 1111, 102, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (312, 1112, 102, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
@@ -168,7 +168,7 @@ VALUES
   (319, 1119, 102, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (320, 1120, 102, 0, 0, 0, 0, CURRENT_DATE(), "admin", true);
 
-INSERT IGNORE INTO tournament_db.team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO team_stats(team_stats_id, team_id, tournament_id, total_runs_scored, total_overs_played, total_runs_conceded, total_overs_bowled, record_created_date, record_created_by, is_active)
 VALUES
   (331, 1111, 104, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (332, 1112, 104, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
@@ -182,7 +182,7 @@ VALUES
   (340, 1120, 104, 0, 0, 0, 0, CURRENT_DATE(), "admin", true);
 
 -- PointsTable
-INSERT IGNORE INTO tournament_db.points_table(points_table_id, tournament_id, team_id, played, won, lost, tied, no_result, points, net_match_rate, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO points_table(points_table_id, tournament_id, team_id, played, won, lost, tied, no_result, points, net_match_rate, record_created_date, record_created_by, is_active)
 VALUES
   (401, 101, 1101, 0, 0, 0, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (402, 101, 1102, 0, 0, 0, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
@@ -207,7 +207,7 @@ VALUES
   (420, 102, 1120, 0, 0, 0, 0, 0, 0, 0, CURRENT_DATE(), "admin", true);
 
 
-INSERT IGNORE INTO tournament_db.points_table(points_table_id, tournament_id, team_id, played, won, lost, tied, no_result, points, net_match_rate, record_created_date, record_created_by, is_active)
+INSERT IGNORE INTO points_table(points_table_id, tournament_id, team_id, played, won, lost, tied, no_result, points, net_match_rate, record_created_date, record_created_by, is_active)
 VALUES
   (421, 103, 1101, 0, 0, 0, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),
   (422, 103, 1102, 0, 0, 0, 0, 0, 0, 0, CURRENT_DATE(), "admin", true),

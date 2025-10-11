@@ -3,14 +3,19 @@
     <jmxConfigurator/>
     <include resource="org/springframework/boot/logging/logback/base.xml"/>
     <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <springProperty scope="context" name="environment" source="SPRING_PROFILES_ACTIVE" defaultValue="local"/>
+    <springProperty scope="context" name="lokiLogLevel" source="logging.loki.level" defaultValue="INFO"/>
 
     <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${lokiLogLevel}</level>
+        </filter>
         <http>
             <url>http://loki:3100/loki/api/v1/push</url>
         </http>
         <format>
             <label>
-                <pattern>application=${appName},host=${HOSTNAME},level=%level</pattern>
+                <pattern>application=${appName},host=${HOSTNAME},level=%level,environment=${environment}</pattern>
             </label>
             <message>
                 <pattern>${FILE_LOG_PATTERN}</pattern>

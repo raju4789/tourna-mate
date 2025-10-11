@@ -1,17 +1,74 @@
 # docker/common-config.yml
-services:
-  tourni-deploy-service:
-    networks:
-      - tourni-network
+# Shared configurations for all TOURNA-MATE services
 
+services:
+  # Base network configuration
+  tourni-deploy-service:
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # Base configuration for all Spring Boot services
+  # Note: This is a template - environment-specific compose files override these values
   tourni-base-config:
     extends:
       service: tourni-deploy-service
     environment:
-      MYSQL_HOST: tourni-mysql
+      # Database Configuration (override MYSQL_HOST and MYSQL_DATABASE per environment)
+      MYSQL_HOST: ${MYSQL_HOST:-tourni-mysql}
       MYSQL_PORT: 3306
-      MYSQL_DATABASE: tournament_db
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-tournament_db}
       MYSQL_USER: tournament_admin
-      MYSQL_PASSWORD: tournament@2023
+      MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
+      
+      # Spring Boot Database Configuration
+      SPRING_DATASOURCE_URL: jdbc:mysql://${MYSQL_HOST:-tourni-mysql}:3306/${MYSQL_DATABASE:-tournament_db}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: tournament_admin
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQL8Dialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      
+      # Service Discovery Configuration
       EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://tourni-discovery-service:8761/eureka/
       CONFIG_SERVICE_HOST: tourni-config-server
+      
+      # Vault Configuration
+      VAULT_ADDR: http://vault:8200
+      
+          # Spring Boot Configuration
+          # SPRING_PROFILES_ACTIVE is set per environment in docker-compose.{env}.yml
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
+      
+      # Observability Configuration (override per environment)
+      TEMPO_HOST: ${TEMPO_HOST:-tempo}
+      LOKI_HOST: ${LOKI_HOST:-loki}
+      PROMETHEUS_HOST: ${PROMETHEUS_HOST:-prometheus}
+      
+      # Logging Configuration
+      LOGGING_LEVEL_COM_TOURNAMENT: INFO
+      LOGGING_LEVEL_ROOT: WARN
+      
+      # JVM Configuration
+      JAVA_OPTS: -Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseContainerSupport
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Configuration for observability services
+  tourni-observability-config:
+    extends:
+      service: tourni-deploy-service
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'

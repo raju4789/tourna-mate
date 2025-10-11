@@ -34,7 +34,7 @@ scrape_configs:
   - job_name: 'tourni-gateway'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['tourni-gateway-dev:8080']
+      - targets: ['tourni-gateway-dev:8091']
         labels:
           application: 'Tourni Gateway'
 

@@ -6,40 +6,40 @@ scrape_configs:
   - job_name: 'tourni-config-server'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['tourni-config-dev:8888']
+      - targets: ['tourni-config-staging:8888']
         labels:
           application: 'Tourni Config Server'
 
   - job_name: 'tourni-identity-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['tourni-identity-dev:8082']
+      - targets: ['tourni-identity-staging:8082']
         labels:
           application: 'Tourni Identity Service'
 
   - job_name: 'tourni-management'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['tourni-management-dev:8083']
+      - targets: ['tourni-management-staging:8083']
         labels:
           application: 'Tourni Management Service'
 
   - job_name: 'tourni-ai'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['tourni-ai-dev:8084']
+      - targets: ['tourni-ai-staging:8084']
         labels:
           application: 'Tourni AI Service'
 
   - job_name: 'tourni-gateway'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['tourni-gateway-dev:8080']
+      - targets: ['tourni-gateway-staging:8080']
         labels:
           application: 'Tourni Gateway'
 
   - job_name: 'tourni-mysql'
     static_configs:
-      - targets: ['tourni-mysql-dev:9104']
+      - targets: ['tourni-mysql-staging:9104']
         labels:
           application: 'Tourni MySQL Exporter'
