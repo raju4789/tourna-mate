@@ -8,16 +8,16 @@
 
 set -e
 
-# Change to docker directory
-cd "$(dirname "$0")/docker"
+# Change to docker/dev directory
+cd "$(dirname "$0")/docker/dev"
 
 echo "=============================================="
 echo "🚀 Starting TOURNA-MATE (Development)"
 echo "=============================================="
 
 # Check if .env.dev exists
-if [ ! -f "secrets/.env.dev" ]; then
-    echo "❌ ERROR: secrets/.env.dev not found!"
+if [ ! -f "../secrets/.env.dev" ]; then
+    echo "❌ ERROR: docker/secrets/.env.dev not found!"
     echo ""
     echo "Please create it from the template:"
     echo "  cd docker/secrets"
@@ -32,16 +32,16 @@ echo ""
 
 # Load environment variables from .env.dev
 set -a  # automatically export all variables
-source secrets/.env.dev
+source ../secrets/.env.dev
 set +a
 
 export ENVIRONMENT=development
 
-echo "📦 Starting services with docker-compose.dev.yml..."
+echo "📦 Starting services with docker-compose.yml..."
 echo ""
 
 # Start services and wait for them to be healthy
-docker-compose -f docker-compose.dev.yml up -d --wait
+docker-compose --env-file ../secrets/.env.dev up -d --wait
 
 echo ""
 echo "=============================================="
@@ -59,11 +59,11 @@ echo "  - phpMyAdmin: http://localhost:8090 (user: tournament_admin)"
 echo "  - MySQL:      localhost:3306"
 echo ""
 echo "🔍 Check status:"
-echo "  cd docker && docker-compose -f docker-compose.dev.yml ps"
+echo "  cd docker/dev && docker-compose ps"
 echo ""
 echo "📋 View logs:"
-echo "  cd docker && docker-compose -f docker-compose.dev.yml logs -f [service-name]"
+echo "  cd docker/dev && docker-compose logs -f [service-name]"
 echo ""
 echo "🛑 Stop services:"
-echo "  cd docker && docker-compose -f docker-compose.dev.yml down"
+echo "  cd docker/dev && docker-compose down"
 echo "=============================================="

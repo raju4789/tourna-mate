@@ -9,8 +9,8 @@
 
 set -e
 
-# Change to docker directory
-cd "$(dirname "$0")/docker"
+# Change to docker/prod directory
+cd "$(dirname "$0")/docker/prod"
 
 echo "=============================================="
 echo "🚀 Starting TOURNA-MATE (Production)"
@@ -19,7 +19,7 @@ echo "⚠️  WARNING: You are starting PRODUCTION!"
 echo "=============================================="
 
 # Check if .env.prod exists
-if [ ! -f "secrets/.env.prod" ]; then
+if [ ! -f "../secrets/.env.prod" ]; then
     echo "❌ ERROR: secrets/.env.prod not found!"
     echo ""
     echo "For production, you should:"
@@ -40,7 +40,7 @@ echo ""
 
 # Validate production secrets
 echo "🔍 Validating production secrets..."
-if grep -q "REPLACE_WITH_" secrets/.env.prod; then
+if grep -q "REPLACE_WITH_" ../secrets/.env.prod; then
     echo "❌ ERROR: Production secrets contain placeholder values!"
     echo ""
     echo "Please replace all 'REPLACE_WITH_' values with strong passwords:"
@@ -54,7 +54,7 @@ echo ""
 
 # Load environment variables from .env.prod BEFORE the confirmation
 set -a  # automatically export all variables
-source secrets/.env.prod
+source ../secrets/.env.prod
 set +a
 
 export ENVIRONMENT=production
@@ -71,7 +71,7 @@ echo "📦 Starting services with docker-compose.prod.yml..."
 echo ""
 
 # Start services and wait for them to be healthy
-docker-compose -f docker-compose.prod.yml up -d --wait
+docker-compose --env-file ../secrets/.env.prod up -d --wait
 
 echo ""
 echo "=============================================="
@@ -88,11 +88,11 @@ echo "  - Prometheus: http://localhost:9092"
 echo "  - MySQL:      localhost:3308"
 echo ""
 echo "🔍 Check status:"
-echo "  cd docker && docker-compose -f docker-compose.prod.yml ps"
+echo "  cd docker/prod && docker-compose ps"
 echo ""
 echo "📋 View logs:"
-echo "  cd docker && docker-compose -f docker-compose.prod.yml logs -f [service-name]"
+echo "  cd docker/prod && docker-compose logs -f [service-name]"
 echo ""
 echo "🛑 Stop services:"
-echo "  cd docker && docker-compose -f docker-compose.prod.yml down"
+echo "  cd docker/prod && docker-compose down"
 echo "=============================================="

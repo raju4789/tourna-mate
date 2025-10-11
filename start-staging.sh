@@ -8,15 +8,15 @@
 
 set -e
 
-# Change to docker directory
-cd "$(dirname "$0")/docker"
+# Change to docker/staging directory
+cd "$(dirname "$0")/docker/staging"
 
 echo "=============================================="
 echo "🚀 Starting TOURNA-MATE (Staging)"
 echo "=============================================="
 
 # Check if .env.staging exists
-if [ ! -f "secrets/.env.staging" ]; then
+if [ ! -f "../secrets/.env.staging" ]; then
     echo "❌ ERROR: secrets/.env.staging not found!"
     echo ""
     echo "Please create it from the template:"
@@ -32,7 +32,7 @@ echo ""
 
 # Load environment variables from .env.staging
 set -a  # automatically export all variables
-source secrets/.env.staging
+source ../secrets/.env.staging
 set +a
 
 export ENVIRONMENT=staging
@@ -41,7 +41,7 @@ echo "📦 Starting services with docker-compose.staging.yml..."
 echo ""
 
 # Start services and wait for them to be healthy
-docker-compose -f docker-compose.staging.yml up -d --wait
+docker-compose --env-file ../secrets/.env.staging up -d --wait
 
 echo ""
 echo "=============================================="
@@ -58,11 +58,11 @@ echo "  - Prometheus: http://localhost:9091"
 echo "  - MySQL:      localhost:3307"
 echo ""
 echo "🔍 Check status:"
-echo "  cd docker && docker-compose -f docker-compose.staging.yml ps"
+echo "  cd docker/staging && docker-compose ps"
 echo ""
 echo "📋 View logs:"
-echo "  cd docker && docker-compose -f docker-compose.staging.yml logs -f [service-name]"
+echo "  cd docker/staging && docker-compose logs -f [service-name]"
 echo ""
 echo "🛑 Stop services:"
-echo "  cd docker && docker-compose.staging.yml down"
+echo "  cd docker/staging && docker-compose down"
 echo "=============================================="

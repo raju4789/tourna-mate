@@ -1,16 +1,22 @@
-# docker/docker-compose.dev.yml
-# DEVELOPMENT ENVIRONMENT
+# docker/docker-compose.prod.yml
+# PRODUCTION ENVIRONMENT
 # 
 # SERVICE STARTUP ORDER:
-# 1. Infrastructure: vault-dev → vault-agent-dev → tourni-mysql-dev
-# 2. Service Discovery: tourni-discovery-dev → tourni-config-dev  
-# 3. Core Services: tourni-identity-dev → tourni-management-dev → tourni-ai-dev
-# 4. Gateway & UI: tourni-gateway-dev → tourni-ui-dev
-# 5. Observability: prometheus-dev, loki-dev, tempo-dev → grafana-dev
+# 1. Infrastructure: vault-prod → vault-agent-prod → tourni-mysql-prod
+# 2. Service Discovery: tourni-discovery-prod → tourni-config-prod  
+# 3. Core Services: tourni-identity-prod → tourni-management-prod → tourni-ai-prod
+# 4. Gateway & UI: tourni-gateway-prod → tourni-ui-prod
+# 5. Observability: prometheus-prod, loki-prod, tempo-prod → grafana-prod
 #
-# Ports: 8xxx range (8080, 8761, 3306, etc.)
-# Network: tourni-network-dev
-# Data: docker/data/dev/*
+# Ports: 10xxx range (10080, 10761, 3308, etc.)
+# Network: tourni-network-prod
+# Data: docker/data/prod/*
+#
+# ⚠️  PRODUCTION CONFIGURATION - Use with caution!
+# - Higher resource limits
+# - Stricter security settings
+# - Auto-restart on failure
+# - Health checks with longer timeouts
 
 version: "3.9"
 
@@ -19,21 +25,21 @@ services:
   # INFRASTRUCTURE LAYER (Startup Order: 1-3)
   # ========================================
   
-  vault-dev:
+  vault-prod:
     image: hashicorp/vault:latest
-    container_name: vault-dev
+    container_name: vault-prod
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=myroot
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
-      - VAULT_LOG_LEVEL=info
+      - VAULT_LOG_LEVEL=warn  # Less verbose in production
     ports:
-      - "8200:8200"
+      - "8202:8200"
     volumes:
-      - vault-data-dev:/vault/data
+      - vault-data-prod:/vault/data
     command: ["vault", "server", "-dev"]
     networks:
-      - tourni-network-dev
-    restart: unless-stopped
+      - tourni-network-prod
+    restart: always  # Always restart in production
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:8200/v1/sys/health"]
       interval: 10s
@@ -43,34 +49,34 @@ services:
     deploy:
       resources:
         limits:
+          memory: 512M  # More memory for production
+          cpus: '0.5'
+        reservations:
           memory: 256M
           cpus: '0.25'
-        reservations:
-          memory: 128M
-          cpus: '0.1'
 
-  vault-agent-dev:
+  vault-agent-prod:
     image: hashicorp/vault:latest
-    container_name: vault-agent-dev
+    container_name: vault-agent-prod
     environment:
-      - VAULT_ADDR=http://vault-dev:8200
+      - VAULT_ADDR=http://vault-prod:8200
       - VAULT_TOKEN=myroot
-      - ENVIRONMENT=development
+      - ENVIRONMENT=production
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - GRAFANA_PASSWORD=${GRAFANA_PASSWORD}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
-      - vault-secrets-dev:/vault/secrets
-      - ./scripts:/scripts:ro
+      - vault-secrets-prod:/vault/secrets
+      - ../scripts:/scripts:ro
     command: ["sh", "/scripts/init-vault.sh"]
     depends_on:
-      vault-dev:
+      vault-prod:
         condition: service_healthy
     networks:
-      - tourni-network-dev
-    restart: unless-stopped
+      - tourni-network-prod
+    restart: always
     healthcheck:
       test: ["CMD", "sh", "-c", "test -f /vault/secrets/mysql_root_password && test -f /vault/secrets/jwt_secret"]
       interval: 10s
@@ -80,29 +86,29 @@ services:
     deploy:
       resources:
         limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
           memory: 256M
           cpus: '0.25'
-        reservations:
-          memory: 128M
-          cpus: '0.1'
 
-  tourni-mysql-dev:
-    container_name: tourni-mysql-dev
+  tourni-mysql-prod:
+    container_name: tourni-mysql-prod
     image: mysql:8.0.13
     platform: linux/amd64
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /vault/secrets/mysql_root_password
-      MYSQL_DATABASE: tournament_db_dev
+      MYSQL_DATABASE: tournament_db_prod
       MYSQL_USER: tournament_admin
       MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
     ports:
-      - "3306:3306"
+      - "3308:3306"
     volumes:
-      - mysql-data-dev:/var/lib/mysql
-      - vault-secrets-dev:/vault/secrets:ro
+      - mysql-data-prod:/var/lib/mysql
+      - vault-secrets-prod:/vault/secrets:ro
     networks:
-      - tourni-network-dev
-    restart: unless-stopped
+      - tourni-network-prod
+    restart: always
     security_opt:
       - no-new-privileges:true
     user: "999:999"
@@ -113,75 +119,82 @@ services:
       retries: 5
       start_period: 40s
     depends_on:
-      vault-agent-dev:
+      vault-agent-prod:
         condition: service_healthy
     deploy:
       resources:
         limits:
+          memory: 4G  # More memory for production database
+          cpus: '2.0'
+        reservations:
           memory: 2G
           cpus: '1.0'
-        reservations:
-          memory: 1G
-          cpus: '0.5'
 
   # ========================================
   # SERVICE DISCOVERY & CONFIG LAYER (Startup Order: 4-5)
   # ========================================
 
-  tourni-discovery-dev:
+  tourni-discovery-prod:
     build:
-      context: ../
+      context: ../../
       dockerfile: tourni-discovery-service/Dockerfile
       args:
         SERVICE_DIR: tourni-discovery-service
-    container_name: tourni-discovery-dev
+    container_name: tourni-discovery-prod
     ports:
-      - "8761:8761"
+      - "10761:8761"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
-      - CONFIG_SERVICE_HOST=tourni-config-dev
+      - MYSQL_HOST=tourni-mysql-prod
+      - MYSQL_DATABASE=tournament_db_prod
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
+      - CONFIG_SERVICE_HOST=tourni-config-prod
+      - SPRING_PROFILES_ACTIVE=prod  # Production profile
+      - LOGGING_LEVEL_ROOT=WARN  # Less verbose logging
     networks:
-      - tourni-network-dev
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 40s
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
-  tourni-config-dev:
+  tourni-config-prod:
     build:
-      context: ../
+      context: ../../
       dockerfile: tourni-config-server/Dockerfile
       args:
         SERVICE_DIR: tourni-config-server
-    container_name: tourni-config-dev
+    container_name: tourni-config-prod
     ports:
-      - "8888:8888"
+      - "10888:8888"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
-      - CONFIG_SERVICE_HOST=tourni-config-dev
+      - MYSQL_HOST=tourni-mysql-prod
+      - MYSQL_DATABASE=tournament_db_prod
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
+      - CONFIG_SERVICE_HOST=tourni-config-prod
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOGGING_LEVEL_ROOT=WARN
     networks:
-      - tourni-network-dev
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     depends_on:
-      tourni-mysql-dev:
+      tourni-mysql-prod:
         condition: service_healthy
-      tourni-discovery-dev:
+      tourni-discovery-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health/readiness"]
@@ -189,49 +202,58 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   # ========================================
   # CORE BUSINESS SERVICES LAYER (Startup Order: 6-8)
   # ========================================
 
-  tourni-identity-dev:
+  tourni-identity-prod:
     build:
-      context: ../
+      context: ../../
       dockerfile: tourni-identity-service/Dockerfile
       args:
         SERVICE_DIR: tourni-identity-service
-    container_name: tourni-identity-dev
+    container_name: tourni-identity-prod
     ports:
-      - "8082:8082"
+      - "10082:8082"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
       - JWT_SECRET=${JWT_SECRET}
       - JWT_SECRET_FILE=/vault/secrets/jwt_secret
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
+      - MYSQL_HOST=tourni-mysql-prod
+      - MYSQL_DATABASE=tournament_db_prod
+      - MYSQL_USER=tournament_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
-      - CONFIG_SERVICE_HOST=tourni-config-dev
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
+      - CONFIG_SERVICE_HOST=tourni-config-prod
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOGGING_LEVEL_ROOT=WARN
       - TEMPO_HOST=tempo
       - LOKI_HOST=loki
       - PROMETHEUS_HOST=prometheus
     volumes:
-      - vault-secrets-dev:/vault/secrets:ro
+      - vault-secrets-prod:/vault/secrets:ro
     networks:
-      - tourni-network-dev
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     depends_on:
-      vault-agent-dev:
+      vault-agent-prod:
         condition: service_healthy
-      tourni-mysql-dev:
+      tourni-mysql-prod:
         condition: service_healthy
-      tourni-config-dev:
+      tourni-config-prod:
         condition: service_healthy
-      tourni-discovery-dev:
+      tourni-discovery-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health/readiness"]
@@ -239,41 +261,50 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
-  tourni-management-dev:
+  tourni-management-prod:
     build:
-      context: ../
+      context: ../../
       dockerfile: tourni-management/Dockerfile
       args:
         SERVICE_DIR: tourni-management
-    container_name: tourni-management-dev
+    container_name: tourni-management-prod
     ports:
-      - "8083:8083"
+      - "10083:8083"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
+      - MYSQL_HOST=tourni-mysql-prod
+      - MYSQL_DATABASE=tournament_db_prod
+      - MYSQL_USER=tournament_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
-      - CONFIG_SERVICE_HOST=tourni-config-dev
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
+      - CONFIG_SERVICE_HOST=tourni-config-prod
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOGGING_LEVEL_ROOT=WARN
       - TEMPO_HOST=tempo
       - LOKI_HOST=loki
       - PROMETHEUS_HOST=prometheus
     networks:
-      - tourni-network-dev
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     depends_on:
-      tourni-mysql-dev:
+      tourni-mysql-prod:
         condition: service_healthy
-      tourni-config-dev:
+      tourni-config-prod:
         condition: service_healthy
-      tourni-discovery-dev:
+      tourni-discovery-prod:
         condition: service_healthy
-      tourni-identity-dev:
+      tourni-identity-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health/readiness"]
@@ -281,41 +312,50 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
-  tourni-ai-dev:
+  tourni-ai-prod:
     build:
-      context: ../
+      context: ../../
       dockerfile: tourni-ai/Dockerfile
       args:
         SERVICE_DIR: tourni-ai
-    container_name: tourni-ai-dev
+    container_name: tourni-ai-prod
     ports:
-      - "8084:8084"
+      - "10084:8084"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
+      - MYSQL_HOST=tourni-mysql-prod
+      - MYSQL_DATABASE=tournament_db_prod
+      - MYSQL_USER=tournament_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
-      - CONFIG_SERVICE_HOST=tourni-config-dev
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
+      - CONFIG_SERVICE_HOST=tourni-config-prod
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOGGING_LEVEL_ROOT=WARN
       - TEMPO_HOST=tempo
       - LOKI_HOST=loki
       - PROMETHEUS_HOST=prometheus
     networks:
-      - tourni-network-dev
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     depends_on:
-      tourni-mysql-dev:
+      tourni-mysql-prod:
         condition: service_healthy
-      tourni-discovery-dev:
+      tourni-discovery-prod:
         condition: service_healthy
-      tourni-config-dev:
+      tourni-config-prod:
         condition: service_healthy
-      tourni-identity-dev:
+      tourni-identity-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health/readiness"]
@@ -323,46 +363,59 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   # ========================================
   # GATEWAY & UI LAYER (Startup Order: 9-10)
   # ========================================
 
-  tourni-gateway-dev:
+  tourni-gateway-prod:
     build:
-      context: ../
+      context: ../../
       dockerfile: tourni-gateway/Dockerfile
       args:
         SERVICE_DIR: tourni-gateway
-    container_name: tourni-gateway-dev
+    container_name: tourni-gateway-prod
     ports:
-      - "8080:8080"
-      - "8091:8091"
+      - "10080:8080"
+      - "10091:8091"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
+      - JWT_SECRET=${JWT_SECRET}
       - MANAGEMENT_SERVER_PORT=8091
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
+      - MYSQL_HOST=tourni-mysql-prod
+      - MYSQL_DATABASE=tournament_db_prod
+      - MYSQL_USER=tournament_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
-      - CONFIG_SERVICE_HOST=tourni-config-dev
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
+      - CONFIG_SERVICE_HOST=tourni-config-prod
+      - SPRING_PROFILES_ACTIVE=prod
+      - LOGGING_LEVEL_ROOT=WARN
+      - TEMPO_HOST=tempo
+      - LOKI_HOST=loki
+      - PROMETHEUS_HOST=prometheus
     networks:
-      - tourni-network-dev
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     depends_on:
-      tourni-discovery-dev:
+      tourni-discovery-prod:
         condition: service_healthy
-      tourni-identity-dev:
+      tourni-identity-prod:
         condition: service_healthy
-      tourni-config-dev:
+      tourni-config-prod:
         condition: service_healthy
-      tourni-management-dev:
+      tourni-management-prod:
         condition: service_healthy
-      tourni-ai-dev:
+      tourni-ai-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8091/actuator/health/readiness"]
@@ -370,25 +423,33 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
-  tourni-ui-dev:
+  tourni-ui-prod:
     build:
-      context: ../tourni-ui
+      context: ../../tourni-ui
       dockerfile: Dockerfile
       args:
         SERVICE_DIR: tourni-ui
-    container_name: tourni-ui-dev
+    container_name: tourni-ui-prod
     ports:
-      - "8002:8000"
+      - "10002:8000"
     environment:
-      - GATEWAY_HOST=tourni-gateway-dev
+      - GATEWAY_HOST=tourni-gateway-prod
     networks:
-      - tourni-network-dev
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
     depends_on:
-      tourni-gateway-dev:
+      tourni-gateway-prod:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "sh", "-c", "wget -q -O - http://127.0.0.1:8000 > /dev/null"]
@@ -396,9 +457,14 @@ services:
       timeout: 5s
       retries: 10
       start_period: 40s
-    extends:
-      file: common-config.yml
-      service: tourni-base-config
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   # ========================================
   # OBSERVABILITY LAYER (Startup Order: 11-14)
@@ -406,16 +472,16 @@ services:
   
   prometheus:
     image: prom/prometheus:v2.45.0
-    container_name: prometheus-dev
+    container_name: prometheus-prod
     platform: linux/amd64
     ports:
-      - "9090:9090"
+      - "9092:9090"
     volumes:
-      - ../observability/prometheus/prometheus.dev.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data-dev:/prometheus
+      - ../../observability/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data-prod:/prometheus
     networks:
-      - tourni-network-dev
-    restart: unless-stopped
+      - tourni-network-prod
+    restart: always
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -427,26 +493,26 @@ services:
     deploy:
       resources:
         limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
           memory: 512M
           cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
 
   tempo:
     image: grafana/tempo:2.3.0
-    container_name: tempo-dev
+    container_name: tempo-prod
     platform: linux/amd64
     command: [ "-config.file=/etc/tempo.yaml" ]
     volumes:
-      - ../observability/tempo/tempo.yml:/etc/tempo.yaml:ro
-      - tempo-data-dev:/tmp/tempo
+      - ../../observability/tempo/tempo.yml:/etc/tempo.yaml:ro
+      - tempo-data-prod:/tmp/tempo
     ports:
-      - "3200:3200"
-      - "9411:9411"
+      - "3202:3200"
+      - "9413:9411"
     networks:
-      - tourni-network-dev
-    restart: unless-stopped
+      - tourni-network-prod
+    restart: always
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -458,24 +524,24 @@ services:
     deploy:
       resources:
         limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
           memory: 512M
           cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
 
   loki:
     image: grafana/loki:2.9.0
-    container_name: loki-dev
+    container_name: loki-prod
     platform: linux/amd64
     command: [ "-config.file=/etc/loki/local-config.yaml" ]
     ports:
-      - "3100:3100"
+      - "3102:3100"
     volumes:
-      - loki-data-dev:/loki
+      - loki-data-prod:/loki
     networks:
-      - tourni-network-dev
-    restart: unless-stopped
+      - tourni-network-prod
+    restart: always
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -487,39 +553,41 @@ services:
     deploy:
       resources:
         limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
           memory: 512M
           cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
 
   grafana:
     image: grafana/grafana:10.1.0
-    container_name: grafana-dev
+    container_name: grafana-prod
     platform: linux/amd64
     ports:
-      - "3000:3000"
+      - "3002:3000"
     volumes:
-      - ../observability/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
-      - ../observability/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
-      - ../observability/grafana/dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json:ro
-      - vault-secrets-dev:/vault/secrets:ro
-      - grafana-data-dev:/var/lib/grafana
+      - ../../observability/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - ../../observability/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ../../observability/grafana/dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json:ro
+      - vault-secrets-prod:/vault/secrets:ro
+      - grafana-data-prod:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD__FILE=/vault/secrets/grafana_password
       - GF_SECURITY_DISABLE_GRAVATAR=true
       - GF_SECURITY_COOKIE_SECURE=true
       - GF_SECURITY_COOKIE_SAMESITE=strict
-      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_SERVER_ROOT_URL=http://localhost:3002
+      - GF_LOG_MODE=file  # Production logging to file
+      - GF_LOG_LEVEL=warn
     networks:
-      - tourni-network-dev
-    restart: unless-stopped
+      - tourni-network-prod
+    restart: always
     security_opt:
       - no-new-privileges:true
     user: "472:472"
     depends_on:
-      vault-agent-dev:
+      vault-agent-prod:
         condition: service_healthy
       prometheus:
         condition: service_healthy
@@ -530,61 +598,30 @@ services:
     deploy:
       resources:
         limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
           memory: 512M
           cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
-
-  # ========================================
-  # DATABASE MANAGEMENT (phpMyAdmin)
-  # ========================================
-  
-  phpmyadmin-dev:
-    image: phpmyadmin:latest
-    container_name: phpmyadmin-dev
-    platform: linux/amd64
-    ports:
-      - "8090:80"
-    environment:
-      - PMA_HOST=tourni-mysql-dev
-      - PMA_PORT=3306
-      - PMA_USER=tournament_admin
-      - PMA_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-    networks:
-      - tourni-network-dev
-    restart: unless-stopped
-    depends_on:
-      tourni-mysql-dev:
-        condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.25'
-        reservations:
-          memory: 128M
-          cpus: '0.1'
 
 volumes:
-  mysql-data-dev:
+  mysql-data-prod:
     driver: local
-  vault-data-dev:
+  vault-data-prod:
     driver: local
-  vault-secrets-dev:
+  vault-secrets-prod:
     driver: local
-  prometheus-data-dev:
+  prometheus-data-prod:
     driver: local
-  tempo-data-dev:
+  tempo-data-prod:
     driver: local
-  loki-data-dev:
+  loki-data-prod:
     driver: local
-  grafana-data-dev:
+  grafana-data-prod:
     driver: local
 
 networks:
-  tourni-network-dev:
-    name: tourni-network-dev
+  tourni-network-prod:
+    name: tourni-network-prod
     driver: bridge
 
