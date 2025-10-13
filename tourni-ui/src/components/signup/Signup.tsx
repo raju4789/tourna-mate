@@ -23,7 +23,7 @@ import useLocalStorage from '../../hooks/useLocalStorage';
 const Signup: React.FC = () => {
   const navigate = useNavigate();
   const [apiErrorMessage, setAPIErrorMessage] = React.useState<string>('');
-  const { setItem: setJwt } = useLocalStorage('jwt');
+  const { setItem: setJwt } = useLocalStorage('jwt' as string);
   const { setItem: setIsAuthenticated } = useLocalStorage('isAuthenticated' as string);
   const { setItem: setUserName } = useLocalStorage('username' as string);
   const { setItem: setRole } = useLocalStorage('role' as string);

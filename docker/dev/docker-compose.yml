@@ -351,6 +351,8 @@ services:
       - MYSQL_USER=tournament_admin
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-dev
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET_FILE=/vault/secrets/jwt_secret
     networks:
       - tourni-network-dev
     depends_on:

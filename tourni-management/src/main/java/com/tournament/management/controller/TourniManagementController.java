@@ -1,6 +1,9 @@
 package com.tournament.management.controller;
 
 import com.tournament.management.dto.*;
+import com.tournament.management.security.annotations.RequiresAdmin;
+import com.tournament.management.security.annotations.RequiresUser;
+import com.tournament.management.security.UserContextHolder;
 import com.tournament.management.service.TourniManagementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,10 +33,15 @@ public class TourniManagementController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Points table retrieved successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required"),
                     @ApiResponse(responseCode = "500", description = "Internal server error"),
             })
+    @RequiresUser  // Requires USER or ADMIN role
     @GetMapping("/pointstable/tournament/{id}")
     public ResponseEntity<CommonApiResponse<PointsTableByTournamentResponse>> getPointsTableByTournamentId(@PathVariable(name = "id") Long tournamentId) {
+        log.info("User {} requesting points table for tournament {}", 
+                UserContextHolder.getCurrentUsername(), tournamentId);
+        
         PointsTableByTournamentResponse pointsTableByTournamentResponse = tourniManagementService.getPointsTableByTournamentId(tournamentId);
         CommonApiResponse<PointsTableByTournamentResponse> pointsTable = new CommonApiResponse<>(pointsTableByTournamentResponse);
         return ResponseEntity.ok(pointsTable);
@@ -43,14 +51,17 @@ public class TourniManagementController {
             description = "Post endpoint to add match result",
             summary = "Save match result, update team stats and points table",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Match result saved successfully"),
+                    @ApiResponse(responseCode = "201", description = "Match result saved successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error"),
-                    @ApiResponse(responseCode = "403", description = "Unauthorized / Invalid token")
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - Admin access required"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
             })
+    @RequiresAdmin  // Only ADMIN can add match results
     @PostMapping("addMatchResult")
     public ResponseEntity<CommonApiResponse<String>> addMatchResult(@Valid @RequestBody AddMatchResultRequest addMatchResultRequest) {
-
+        log.info("Admin {} adding match result", UserContextHolder.getCurrentUsername());
+        
         tourniManagementService.addMatchResult(addMatchResultRequest);
 
         return ResponseEntity
@@ -64,10 +75,14 @@ public class TourniManagementController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Tournaments retrieved successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required"),
                     @ApiResponse(responseCode = "500", description = "Internal server error"),
             })
+    @RequiresUser  // Requires USER or ADMIN role
     @GetMapping("tournaments")
     public ResponseEntity<CommonApiResponse<List<TournamentDTO>>> getAllTournaments() {
+        log.info("User {} requesting all tournaments", UserContextHolder.getCurrentUsername());
+        
         List<TournamentDTO> tournamentDTOList = tourniManagementService.getAllTournaments();
         CommonApiResponse<List<TournamentDTO>> tournaments = new CommonApiResponse<>(tournamentDTOList);
         return ResponseEntity.ok(tournaments);
@@ -79,10 +94,15 @@ public class TourniManagementController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Teams retrieved successfully"),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - Authentication required"),
                     @ApiResponse(responseCode = "500", description = "Internal server error"),
             })
+    @RequiresUser  // Requires USER or ADMIN role
     @GetMapping("/teams")
     public ResponseEntity<CommonApiResponse<List<TeamDTO>>> getAllTeamsByTournamentId(@RequestParam(name = "tournamentId") Long tournamentId){
+        log.info("User {} requesting teams for tournament {}", 
+                UserContextHolder.getCurrentUsername(), tournamentId);
+        
         List<TeamDTO> teamDTOList = tourniManagementService.getAllTeamsByTournamentId(tournamentId);
         CommonApiResponse<List<TeamDTO>> teams = new CommonApiResponse<>(teamDTOList);
         return ResponseEntity.ok(teams);

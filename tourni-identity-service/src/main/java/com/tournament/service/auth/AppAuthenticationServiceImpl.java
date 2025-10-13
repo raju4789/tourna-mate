@@ -47,8 +47,13 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             AppUser user = appUserRepository.findById(username)
                     .orElseThrow(() -> new RecordNotFoundException("User not found with username: " + username));
 
-
-            boolean isValid = jwtService.isTokenValid(token, user);
+            // Validate token with version check
+            boolean isValid = jwtService.isTokenValid(token, user, user.getTokenVersion());
+            
+            if (!isValid) {
+                log.warn("Token validation failed for user {}", username);
+            }
+            
             return AppTokenValidationResponse.builder()
                     .isValid(isValid)
                     .build();
@@ -76,13 +81,19 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
             AppUser user = appUserRepository.findById(appAuthenticationRequest.getUsername())
                     .orElseThrow(() -> new RecordNotFoundException("User not found with username: " + appAuthenticationRequest.getUsername()));
 
-
-            String JWTToken = jwtService.generateToken(user);
+            // Generate token with current token version
+            String JWTToken = jwtService.generateToken(user, user.getTokenVersion());
+            
+            // Get roles as comma-separated string for response
+            String rolesStr = user.getRoles().stream()
+                    .map(AppUserRole::toString)
+                    .reduce((a, b) -> a + "," + b)
+                    .orElse("USER");
 
             return AppAuthenticationResponse.builder()
                     .fullName(user.getFirstName() + " " + user.getLastName())
                     .username(user.getUsername())
-                    .role(user.getRole().toString())
+                    .role(rolesStr)  // Return all roles as comma-separated string
                     .token(JWTToken)
                     .build();
         } catch (RecordNotFoundException e) {
@@ -105,26 +116,37 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
                     .ifPresent(user -> {
                         throw new RecordAlreadyExistsException("User already exists with username: " + appRegistrationRequest.getUsername());
                     });
+            // Build user with USER role by default
             AppUser user = AppUser.builder()
                     .email(appRegistrationRequest.getEmail())
                     .firstName(appRegistrationRequest.getFirstName())
                     .lastName(appRegistrationRequest.getLastName())
                     .username(appRegistrationRequest.getUsername())
                     .password(passwordEncoder.encode(appRegistrationRequest.getPassword()))
-                    .role(AppUserRole.USER)
+                    .roles(new java.util.HashSet<>())  // Initialize roles set
+                    .tokenVersion(0)  // Initial token version
                     .isActive(true)
                     .recordCreatedBy(UUID.randomUUID().toString())
                     .recordCreatedDate(LocalDateTime.now())
                     .build();
+            
+            // Add USER role
+            user.getRoles().add(AppUserRole.USER);
 
             appUserRepository.save(user);
 
-            String JWTToken = jwtService.generateToken(user);
+            // Generate token with version
+            String JWTToken = jwtService.generateToken(user, user.getTokenVersion());
+            
+            String rolesStr = user.getRoles().stream()
+                    .map(AppUserRole::toString)
+                    .reduce((a, b) -> a + "," + b)
+                    .orElse("USER");
 
             return AppAuthenticationResponse.builder()
                     .fullName(user.getFirstName() + " " + user.getLastName())
                     .username(user.getUsername())
-                    .role(user.getRole().toString())
+                    .role(rolesStr)
                     .token(JWTToken)
                     .build();
         } catch (RecordAlreadyExistsException e) {
@@ -142,7 +164,9 @@ public class AppAuthenticationServiceImpl implements AppAuthenticationService {
         try {
             AppUser user = appUserRepository.findById(username)
                     .orElseThrow(() -> new RecordNotFoundException("User not found with username: " + username));
-            String token = jwtService.generateToken(user);
+            
+            // Generate token with current version
+            String token = jwtService.generateToken(user, user.getTokenVersion());
 
             return AppAuthenticationResponse.builder()
                     .token(token)

@@ -8,8 +8,9 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import { AddBox, SportsSoccer, Group } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
-import { Anchor, Role } from '../../types/Types';
+import { Anchor } from '../../types/Types';
 import useLocalStorage from '../../hooks/useLocalStorage';
+import { isAdmin } from '../../utils/roleHelpers';
 
 interface ISidebarProps {
   sideBarDirection: { left: boolean; };
@@ -23,12 +24,19 @@ export default function Sidebar(props: ISidebarProps) {
 
   const { getItem: getRole } = useLocalStorage('role' as string);
   const { getItem: getIsAuthenticated } = useLocalStorage('isAuthenticated' as string);
+  
+  const userRoles = getRole() as string | null;
 
-  const sideBarItems: string[] = ['Points table'];
-
-  if (getIsAuthenticated() && getRole() === Role.ADMIN) {
-    sideBarItems.push('Add match result', 'Add tournament', 'Add team');
-  }
+  // Use useMemo to prevent recalculation on every render
+  const sideBarItems = React.useMemo(() => {
+    const items: string[] = ['Points table'];
+    
+    if (getIsAuthenticated() && isAdmin(userRoles)) {
+      items.push('Add match result', 'Add tournament', 'Add team');
+    }
+    
+    return items;
+  }, [getIsAuthenticated, userRoles]);
 
   const handlePointsTableClick = () => {
     navigate('/pointsTable');

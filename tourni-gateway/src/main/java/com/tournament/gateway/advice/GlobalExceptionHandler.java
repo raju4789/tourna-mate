@@ -3,7 +3,6 @@ package com.tournament.gateway.advice;
 import com.tournament.gateway.dto.common.CommonApiResponse;
 import com.tournament.gateway.dto.common.ErrorDetails;
 import com.tournament.gateway.exceptions.TokenValidationFailedException;
-import com.tournament.gateway.service.TourniGatewayAuthenticationServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -14,6 +14,38 @@ const axiosInstance = axios.create({
   headers,
 });
 
+// Add request interceptor to include JWT token in Authorization header
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('jwt');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Add response interceptor to handle token expiration
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle 401 Unauthorized - token expired or invalid
+    if (error.response?.status === 401) {
+      // Clear authentication state
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      localStorage.removeItem('fullName');
+      
+      // Redirect to login page
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const getPointsTable = (tournamentId: number): Promise<AxiosResponse<ICommonApiResponse<IPointsTableResponse>>> => axiosInstance.get(`/pointstable/tournament/${tournamentId}`);
 
 export const getAllTournaments = (): Promise<AxiosResponse<ICommonApiResponse<ITournament[]>>> => axiosInstance.get('/tournaments');

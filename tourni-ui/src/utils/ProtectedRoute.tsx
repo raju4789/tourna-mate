@@ -3,12 +3,15 @@ import {
   Navigate, Outlet,
 } from 'react-router';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { hasRole } from './roleHelpers';
 
 const ProtectedRoute: React.FC<{ role: string }> = ({ role }) => {
   const { getItem: getIsAuthenticated } = useLocalStorage('isAuthenticated');
   const { getItem: getRole } = useLocalStorage('role');
 
-  if (!getIsAuthenticated() || !(getRole() === role)) {
+  const userRoles = getRole() as string | null;
+  
+  if (!getIsAuthenticated() || !hasRole(userRoles, role)) {
     return <Navigate to="/login" replace />;
   }
 

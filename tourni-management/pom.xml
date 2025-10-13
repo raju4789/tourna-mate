@@ -96,6 +96,11 @@
             <artifactId>loki-logback-appender</artifactId>
             <version>1.5.2</version>
         </dependency>
+        <!-- Spring Security for method-level authorization -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

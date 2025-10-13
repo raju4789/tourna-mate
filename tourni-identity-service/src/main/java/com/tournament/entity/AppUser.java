@@ -10,7 +10,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
 @Setter
@@ -37,8 +39,27 @@ public class AppUser implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
+    /**
+     * User roles - supports multiple roles per user
+     * Uses separate table for many-to-many relationship
+     */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "username")
+    )
     @Enumerated(EnumType.STRING)
-    private AppUserRole role;
+    @Column(name = "role")
+    @Builder.Default
+    private Set<AppUserRole> roles = new HashSet<>();
+    
+    /**
+     * Token version for role change handling
+     * Incremented when roles change - invalidates old tokens
+     */
+    @Column(name = "token_version", nullable = false)
+    @Builder.Default
+    private Integer tokenVersion = 0;
 
     @Column(name = "record_created_date", nullable = false)
     private LocalDateTime recordCreatedDate;
@@ -57,7 +78,40 @@ public class AppUser implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.name()));
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toSet());
+    }
+    
+    /**
+     * Helper method to add a role
+     */
+    public void addRole(AppUserRole role) {
+        this.roles.add(role);
+        incrementTokenVersion();
+    }
+    
+    /**
+     * Helper method to remove a role
+     */
+    public void removeRole(AppUserRole role) {
+        this.roles.remove(role);
+        incrementTokenVersion();
+    }
+    
+    /**
+     * Helper method to check if user has a specific role
+     */
+    public boolean hasRole(AppUserRole role) {
+        return roles.contains(role);
+    }
+    
+    /**
+     * Increment token version - invalidates existing tokens
+     * Call this when roles change or password changes
+     */
+    public void incrementTokenVersion() {
+        this.tokenVersion++;
     }
 
     @Override
