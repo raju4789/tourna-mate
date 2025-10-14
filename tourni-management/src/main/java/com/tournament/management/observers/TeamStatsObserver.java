@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -57,13 +56,13 @@ public class TeamStatsObserver implements MatchResultObserver {
             teamOneStats.setTotalTeamOversPlayed(teamOneStats.getTotalTeamOversPlayed() + teamOneOversPlayed);
             teamOneStats.setTotalRunsConceded(teamOneStats.getTotalRunsConceded() + teamTwoScore);
             teamOneStats.setTotalOversBowled(teamOneStats.getTotalOversBowled() + teamTwoOversPlayed);
-            teamOneStats.setRecordUpdatedDate(LocalDateTime.now());
+            // JPA Auditing will automatically update recordUpdatedDate and recordUpdatedBy
 
             teamTwoStats.setTotalRunsScored(teamTwoStats.getTotalRunsScored() + teamTwoScore);
             teamTwoStats.setTotalTeamOversPlayed(teamTwoStats.getTotalTeamOversPlayed() + teamTwoOversPlayed);
             teamTwoStats.setTotalRunsConceded(teamTwoStats.getTotalRunsConceded() + teamOneScore);
             teamTwoStats.setTotalOversBowled(teamTwoStats.getTotalOversBowled() + teamOneOversPlayed);
-            teamTwoStats.setRecordUpdatedDate(LocalDateTime.now());
+            // JPA Auditing will automatically update recordUpdatedDate and recordUpdatedBy
 
             teamStatsRepository.saveAll(List.of(teamOneStats, teamTwoStats));
 

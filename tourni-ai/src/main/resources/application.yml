@@ -1,13 +1,20 @@
+# tourni-ai/application.yml
+# LOCAL BOOTSTRAP CONFIG ONLY
+# All other configuration is managed in: https://github.com/raju4789/tourni-config
+# - application.yml (common config for all services)
+# - tourni-ai-{profile}.yml (environment-specific overrides, if needed)
+
 server:
-  port: 8084
+  port: 8084  # Service port (not externalized, needs to be known before config server loads)
 
 spring:
   application:
-    name: tourni-ai
+    name: tourni-ai  # Service name for Eureka registration
   
   config:
+    # Import external configuration from Config Server
+    # "optional:" = don't fail if config server is unavailable (use defaults)
     import: "optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888"
 
-
-
-
+# NOTE: All other configuration (logging, JWT, Eureka, tracing, etc.) is loaded from Config Server
+# See: https://github.com/raju4789/tourni-config/application.yml

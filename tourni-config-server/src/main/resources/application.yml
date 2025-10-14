@@ -1,44 +1,61 @@
+# tourni-config-server/application.yml
+# CONFIG SERVER: Central configuration management
+# Serves configuration files from: https://github.com/raju4789/tourni-config
+
 spring:
-    application:
-        name: tourni-config-server
-    cloud:
-        config:
-            server:
-                git:
-                    uri: https://github.com/raju4789/tourni-config
+  application:
+    name: tourni-config-server  # Service name for Eureka registration
+  
+  cloud:
+    config:
+      server:
+        git:
+          # GitHub repository containing all service configurations
+          uri: https://github.com/raju4789/tourni-config
+          # NOTE: Public repo, no authentication required
+          # For private repos, add: username, password, or SSH key
 
 server:
-    port: 8888
+  port: 8888  # Config server port (must be known to all services)
 
 eureka:
-    client:
-        service-url:
-            defaultZone: http://tourni-discovery-service:8761/eureka/
+  client:
+    service-url:
+      # Register with Eureka Discovery Service
+      defaultZone: http://tourni-discovery-service:8761/eureka/
 
 management:
-    endpoints:
-        web:
-            exposure:
-                include: ["health", "info", "metrics", "prometheus"]
+  endpoints:
+    web:
+      exposure:
+        # Expose actuator endpoints for monitoring
+        # health: Kubernetes liveness/readiness probes
+        # info: Service version and git commit info
+        # metrics/prometheus: Prometheus scraping
+        include: ["health", "info", "metrics", "prometheus"]
+  
+  health:
+    readiness-state:
+      enabled: true  # Enable readiness probe (is service ready for traffic?)
+    liveness-state:
+      enabled: true  # Enable liveness probe (should service be restarted?)
+  
+  endpoint:
+    shutdown:
+      enabled: true  # Allow graceful shutdown via actuator
     health:
-        readiness-state:
-            enabled: true
-        liveness-state:
-            enabled: true
-    endpoint:
-        shutdown:
-            enabled: true
-        health:
-            probes:
-                enabled: true
-    info:
-        env:
-            enabled: true
-    metrics:
-        tags:
-            application: ${spring.application.name}
+      probes:
+        enabled: true  # Enable /actuator/health/liveness and /readiness
+  
+  info:
+    env:
+      enabled: true  # Include environment info in /actuator/info
+  
+  metrics:
+    tags:
+      application: ${spring.application.name}  # Tag metrics with service name
 
-
-    logging:
-        pattern:
-            level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"
+logging:
+  pattern:
+    # Include trace/span IDs in logs for distributed tracing correlation
+    level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"

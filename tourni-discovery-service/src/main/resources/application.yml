@@ -1,40 +1,52 @@
+# tourni-discovery-service/application.yml
+# EUREKA SERVER: Service discovery and registration
+# All microservices register here and discover each other
+
 spring:
   application:
-    name: tourni-discovery-service
+    name: tourni-discovery-service  # Service name
 
 server:
-  port: 8761
+  port: 8761  # Standard Eureka port
 
 eureka:
   client:
-    register-with-eureka: false
-    fetch-registry: false
+    # Eureka server should NOT register itself as a client
+    register-with-eureka: false  # Don't register with itself
+    fetch-registry: false  # Don't fetch registry from itself
 
 management:
   endpoints:
     web:
       exposure:
+        # Expose actuator endpoints for monitoring
+        # health: Kubernetes liveness/readiness probes
+        # info: Service version and git commit info
+        # metrics/prometheus: Prometheus scraping
         include: ["health", "info", "metrics", "prometheus"]
+  
   health:
     readiness-state:
-      enabled: true
+      enabled: true  # Enable readiness probe (is service ready for traffic?)
     liveness-state:
-      enabled: true
+      enabled: true  # Enable liveness probe (should service be restarted?)
+  
   endpoint:
     shutdown:
-      enabled: true
+      enabled: true  # Allow graceful shutdown via actuator
     health:
       probes:
-        enabled: true
+        enabled: true  # Enable /actuator/health/liveness and /readiness
+  
   info:
     env:
-      enabled: true
+      enabled: true  # Include environment info in /actuator/info
+  
   metrics:
     tags:
-      application: ${spring.application.name}
+      application: ${spring.application.name}  # Tag metrics with service name
 
-
-  logging:
-    pattern:
-      level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"
-
+logging:
+  pattern:
+    # Include trace/span IDs in logs for distributed tracing correlation
+    level: "%5p [${spring.application.name},%X{trace_id},%X{span_id}]"

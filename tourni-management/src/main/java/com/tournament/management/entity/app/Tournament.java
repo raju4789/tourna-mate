@@ -16,6 +16,7 @@ import lombok.Setter;
 public class Tournament extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tournament_id")
     private long tournamentId;
 

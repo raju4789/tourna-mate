@@ -13,6 +13,7 @@ import lombok.*;
 public class TeamToTournamentMapping extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "mapping_id")
     private long mappingId;
 

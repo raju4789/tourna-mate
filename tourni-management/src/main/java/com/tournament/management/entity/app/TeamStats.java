@@ -16,6 +16,7 @@ import lombok.Setter;
 public class TeamStats extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "team_stats_id")
     private long teamStatsId;
 

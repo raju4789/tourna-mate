@@ -16,8 +16,9 @@ import lombok.Setter;
 public class MatchResult extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "match_id", nullable = false)
-    private long matchId;
+    private Long matchId;
 
     @Column(name = "match_number", nullable = false)
     private long matchNumber;

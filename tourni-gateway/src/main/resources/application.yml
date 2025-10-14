@@ -1,83 +1,98 @@
+# tourni-gateway/application.yml
+# GATEWAY CONFIG: Contains both bootstrap and service-specific routing configuration
+# External config: https://github.com/raju4789/tourni-config/application.yml (common config)
+
 server:
-  port: 8080
+  port: 8080  # Gateway port (entry point for all API requests)
 
 spring:
   application:
-    name: tourni-gateway
+    name: tourni-gateway  # Service name for Eureka registration
   
   config:
+    # Import external configuration from Config Server
+    # "optional:" = don't fail if config server is unavailable (use defaults)
     import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
+  
   cloud:
     gateway:
       discovery:
         locator:
-          enabled: true
-          lower-case-service-id: true
+          enabled: true  # Enable automatic route creation from Eureka
+          lower-case-service-id: true  # Convert service IDs to lowercase in URLs
+      
       routes:
+        # ============================================================
         # Identity Service - Public (no authentication required)
+        # ============================================================
         - id: tourni-identity-service
-          uri: lb://tourni-identity-service
+          uri: lb://tourni-identity-service  # lb:// = load-balanced via Eureka
           predicates:
-            - Path=/api/v1/auth/**
+            - Path=/api/v1/auth/**  # Match /api/v1/auth/* requests
           filters:
             - name: RoleBasedAuthorizationFilter  # No roles required - public access
         
+        # ============================================================
         # Management Service - USER and ADMIN access for read operations
+        # ============================================================
         - id: tourni-management-read
           uri: lb://tourni-management
           predicates:
-            - Path=/api/v1/manage/**
-            - Method=GET
+            - Path=/api/v1/manage/**  # Match /api/v1/manage/* requests
+            - Method=GET  # Only GET requests (read operations)
           filters:
             - name: RoleBasedAuthorizationFilter
               args:
-                requiredRoles: USER,ADMIN
+                requiredRoles: USER,ADMIN  # Both USER and ADMIN can read
         
+        # ============================================================
         # Management Service - ADMIN only for write operations
+        # ============================================================
         - id: tourni-management-write
           uri: lb://tourni-management
           predicates:
-            - Path=/api/v1/manage/**
-            - Method=POST,PUT,DELETE,PATCH
+            - Path=/api/v1/manage/**  # Match /api/v1/manage/* requests
+            - Method=POST,PUT,DELETE,PATCH  # Write operations
           filters:
             - name: RoleBasedAuthorizationFilter
               args:
-                requiredRoles: ADMIN
+                requiredRoles: ADMIN  # Only ADMIN can write
         
+        # ============================================================
         # AI Service - Authenticated users only
+        # ============================================================
         - id: tourni-ai
           uri: lb://tourni-ai
           predicates:
-            - Path=/api/v1/ai/**
+            - Path=/api/v1/ai/**  # Match /api/v1/ai/* requests
           filters:
             - name: RoleBasedAuthorizationFilter
               args:
-                requiredRoles: USER,ADMIN
+                requiredRoles: USER,ADMIN  # Both USER and ADMIN can access
         
-        # Eureka Discovery - ADMIN only
+        # ============================================================
+        # Eureka Discovery - ADMIN only (monitoring/debugging)
+        # ============================================================
         - id: tourni-discovery-service
           uri: http://${EUREKA_HOST:tourni-discovery-service}:${EUREKA_PORT:8761}
           predicates:
-            - Path=/eureka/web
+            - Path=/eureka/web  # Eureka web UI
           filters:
-            - SetPath=/
+            - SetPath=/  # Rewrite /eureka/web -> /
             - name: RoleBasedAuthorizationFilter
               args:
-                requiredRoles: ADMIN
+                requiredRoles: ADMIN  # Only ADMIN can view Eureka dashboard
         
         - id: tourni-discovery-service-static
           uri: http://${EUREKA_HOST:tourni-discovery-service}:${EUREKA_PORT:8761}
           predicates:
-            - Path=/eureka/**
+            - Path=/eureka/**  # Eureka static resources
           filters:
             - name: RoleBasedAuthorizationFilter
               args:
-                requiredRoles: ADMIN
-
+                requiredRoles: ADMIN  # Only ADMIN can access
 
 management:
   endpoint:
     gateway:
-      enabled: true
-
-
+      enabled: true  # Enable /actuator/gateway endpoint (route info, filters, etc.)

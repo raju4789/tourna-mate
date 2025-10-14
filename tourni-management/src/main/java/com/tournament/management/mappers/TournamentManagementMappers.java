@@ -26,8 +26,8 @@ public class TournamentManagementMappers {
 
     public MatchResult mapMatchResultRequestDTOToMatchResult(AddMatchResultRequest addMatchResultRequest) {
         MatchResult matchResult = modelMapper.map(addMatchResultRequest, MatchResult.class);
-        matchResult.setRecordCreatedBy(UUID.randomUUID().toString());
-        matchResult.setRecordCreatedDate(LocalDateTime.now());
+        // JPA Auditing will automatically set recordCreatedBy, recordCreatedDate
+        // from @CreatedBy and @CreatedDate annotations in BaseEntity
         matchResult.setActive(true);
         return matchResult;
     }

@@ -16,6 +16,7 @@ import lombok.Setter;
 public class PointsTable extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "points_table_id", nullable = false)
     private long pointsTableId;
 

@@ -4,6 +4,11 @@ package com.tournament.entity;
 import com.tournament.utils.ApplicationConstants.AppUserRole;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,6 +19,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Application User entity with automatic audit tracking
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,6 +29,7 @@ import java.util.stream.Collectors;
 @Builder
 @Entity
 @Table(name = "app_user")
+@EntityListeners(AuditingEntityListener.class)
 public class AppUser implements UserDetails {
 
     @Id
@@ -61,20 +70,31 @@ public class AppUser implements UserDetails {
     @Builder.Default
     private Integer tokenVersion = 0;
 
-    @Column(name = "record_created_date", nullable = false)
+    @CreatedDate
+    @Column(name = "record_created_date", nullable = false, updatable = false)
     private LocalDateTime recordCreatedDate;
 
+    @LastModifiedDate
     @Column(name = "record_updated_date")
     private LocalDateTime recordUpdatedDate;
 
-    @Column(name = "record_created_by", nullable = false)
+    @CreatedBy
+    @Column(name = "record_created_by", nullable = false, updatable = false)
     private String recordCreatedBy;
 
+    @LastModifiedBy
     @Column(name = "record_updated_by")
     private String recordUpdatedBy;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
+
+    /**
+     * Version for optimistic locking
+     */
+    @Version
+    @Column(name = "version")
+    private Long version;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

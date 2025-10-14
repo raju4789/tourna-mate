@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -44,9 +43,7 @@ public class PointsTableObserver implements MatchResultObserver {
 
         teamOneMatchStats.setPlayed(teamOneMatchStats.getPlayed() + 1);
         teamTwoMatchStats.setPlayed(teamTwoMatchStats.getPlayed() + 1);
-
-        teamTwoMatchStats.setRecordUpdatedDate(LocalDateTime.now());
-        teamOneMatchStats.setRecordUpdatedDate(LocalDateTime.now());
+        // JPA Auditing will automatically update recordUpdatedDate and recordUpdatedBy
 
         final double netRunRateTeamOne = NetRunRateCalculator.calculateNetRunRate(teamOneStats.getTotalRunsScored(), teamOneStats.getTotalTeamOversPlayed(), teamOneStats.getTotalRunsConceded(), teamOneStats.getTotalOversBowled());
         final double netRunRateTeamTwo = NetRunRateCalculator.calculateNetRunRate(teamTwoStats.getTotalRunsScored(), teamTwoStats.getTotalTeamOversPlayed(), teamTwoStats.getTotalRunsConceded(), teamTwoStats.getTotalOversBowled());
