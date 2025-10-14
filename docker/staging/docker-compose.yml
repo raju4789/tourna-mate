@@ -1,14 +1,21 @@
 # docker/docker-compose.staging.yml
-# STAGING ENVIRONMENT
+# STAGING ENVIRONMENT - PRODUCTION-GRADE DATABASE ARCHITECTURE
 # 
-# SERVICE STARTUP ORDER:
-# 1. Infrastructure: vault-staging → vault-agent-staging → tourni-mysql-staging
-# 2. Service Discovery: tourni-discovery-staging → tourni-config-staging  
-# 3. Core Services: tourni-identity-staging → tourni-management-staging → tourni-ai-staging
-# 4. Gateway & UI: tourni-gateway-staging → tourni-ui-staging
-# 5. Observability: prometheus-staging, loki-staging, tempo-staging → grafana-staging
+# DATABASE ARCHITECTURE:
+# - Each microservice has its own dedicated MySQL instance
+# - Identity Service → tourni-identity-mysql-staging (port 3307)
+# - Management Service → tourni-management-mysql-staging (port 3308)
+# - Benefits: Data isolation, independent scaling, failure isolation
 #
-# Ports: 9xxx range (9080, 9761, 3307, etc.)
+# SERVICE STARTUP ORDER:
+# 1. Infrastructure: vault-staging → vault-agent-staging
+# 2. Databases: tourni-identity-mysql-staging, tourni-management-mysql-staging
+# 3. Service Discovery: tourni-discovery-staging → tourni-config-staging  
+# 4. Core Services: tourni-identity-staging → tourni-management-staging → tourni-ai-staging
+# 5. Gateway & UI: tourni-gateway-staging → tourni-ui-staging
+# 6. Observability: prometheus-staging, loki-staging, tempo-staging → grafana-staging
+#
+# Ports: 9xxx range (9080, 9761, etc.)
 # Network: tourni-network-staging
 # Data: docker/data/staging/*
 
@@ -86,19 +93,63 @@ services:
           memory: 128M
           cpus: '0.1'
 
-  tourni-mysql-staging:
-    container_name: tourni-mysql-staging
+  # ========================================
+  # IDENTITY SERVICE DATABASE (Dedicated MySQL Instance)
+  # ========================================
+  tourni-identity-mysql-staging:
+    container_name: tourni-identity-mysql-staging
     image: mysql:8.0.13
     platform: linux/amd64
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /vault/secrets/mysql_root_password
-      MYSQL_DATABASE: tournament_db_staging
-      MYSQL_USER: tournament_admin
+      MYSQL_DATABASE: identity_db_staging
+      MYSQL_USER: identity_admin
       MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
     ports:
       - "3307:3306"
     volumes:
-      - mysql-data-staging:/var/lib/mysql
+      - identity-mysql-data-staging:/var/lib/mysql
+      - vault-secrets-staging:/vault/secrets:ro
+    networks:
+      - tourni-network-staging
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$(cat /vault/secrets/mysql_root_password)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      vault-agent-staging:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # ========================================
+  # MANAGEMENT SERVICE DATABASE (Dedicated MySQL Instance)
+  # ========================================
+  tourni-management-mysql-staging:
+    container_name: tourni-management-mysql-staging
+    image: mysql:8.0.13
+    platform: linux/amd64
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /vault/secrets/mysql_root_password
+      MYSQL_DATABASE: management_db_staging
+      MYSQL_USER: management_admin
+      MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - management-mysql-data-staging:/var/lib/mysql
       - vault-secrets-staging:/vault/secrets:ro
     networks:
       - tourni-network-staging
@@ -138,8 +189,6 @@ services:
     ports:
       - "9761:8761"
     environment:
-      - MYSQL_HOST=tourni-mysql-staging
-      - MYSQL_DATABASE=tournament_db_staging
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-staging:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-staging
       - SPRING_PROFILES_ACTIVE=staging
@@ -173,8 +222,6 @@ services:
     ports:
       - "9888:8888"
     environment:
-      - MYSQL_HOST=tourni-mysql-staging
-      - MYSQL_DATABASE=tournament_db_staging
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-staging:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-staging
       - SPRING_PROFILES_ACTIVE=staging
@@ -184,8 +231,6 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      tourni-mysql-staging:
-        condition: service_healthy
       tourni-discovery-staging:
         condition: service_healthy
     healthcheck:
@@ -217,16 +262,18 @@ services:
     ports:
       - "9082:8082"
     environment:
+      - SPRING_PROFILES_ACTIVE=staging
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://tourni-config-staging:8888
       - JWT_SECRET=${JWT_SECRET}
       - JWT_SECRET_FILE=/vault/secrets/jwt_secret
-      - MYSQL_HOST=tourni-mysql-staging
-      - MYSQL_DATABASE=tournament_db_staging
-      - MYSQL_USER=tournament_admin
+      # Dedicated MySQL instance for identity service
+      - MYSQL_HOST=tourni-identity-mysql-staging
+      - MYSQL_DATABASE=identity_db_staging
+      - MYSQL_USER=identity_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-staging:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-staging
-      - SPRING_PROFILES_ACTIVE=staging
       - TEMPO_HOST=tempo
       - LOKI_HOST=loki
       - PROMETHEUS_HOST=prometheus
@@ -240,7 +287,7 @@ services:
     depends_on:
       vault-agent-staging:
         condition: service_healthy
-      tourni-mysql-staging:
+      tourni-identity-mysql-staging:
         condition: service_healthy
       tourni-config-staging:
         condition: service_healthy
@@ -271,14 +318,16 @@ services:
     ports:
       - "9083:8083"
     environment:
-      - MYSQL_HOST=tourni-mysql-staging
-      - MYSQL_DATABASE=tournament_db_staging
-      - MYSQL_USER=tournament_admin
+      - SPRING_PROFILES_ACTIVE=staging
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://tourni-config-staging:8888
+      # Dedicated MySQL instance for management service
+      - MYSQL_HOST=tourni-management-mysql-staging
+      - MYSQL_DATABASE=management_db_staging
+      - MYSQL_USER=management_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-staging:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-staging
-      - SPRING_PROFILES_ACTIVE=staging
       - TEMPO_HOST=tempo
       - LOKI_HOST=loki
       - PROMETHEUS_HOST=prometheus
@@ -288,7 +337,7 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      tourni-mysql-staging:
+      tourni-management-mysql-staging:
         condition: service_healthy
       tourni-config-staging:
         condition: service_healthy
@@ -384,6 +433,8 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-staging:8761/eureka/
+      - EUREKA_HOST=tourni-discovery-staging
+      - EUREKA_PORT=8761
       - CONFIG_SERVICE_HOST=tourni-config-staging
       - SPRING_PROFILES_ACTIVE=staging
       - TEMPO_HOST=tempo
@@ -591,7 +642,10 @@ services:
           cpus: '0.25'
 
 volumes:
-  mysql-data-staging:
+  # Dedicated MySQL volumes for microservice isolation
+  identity-mysql-data-staging:
+    driver: local
+  management-mysql-data-staging:
     driver: local
   vault-data-staging:
     driver: local

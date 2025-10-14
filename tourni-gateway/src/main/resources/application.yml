@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: tourni-gateway
+  
   config:
     import: optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888
   cloud:
@@ -53,7 +56,7 @@ spring:
         
         # Eureka Discovery - ADMIN only
         - id: tourni-discovery-service
-          uri: http://tourni-discovery-service:8761
+          uri: http://${EUREKA_HOST:tourni-discovery-service}:${EUREKA_PORT:8761}
           predicates:
             - Path=/eureka/web
           filters:
@@ -63,7 +66,7 @@ spring:
                 requiredRoles: ADMIN
         
         - id: tourni-discovery-service-static
-          uri: http://tourni-discovery-service:8761
+          uri: http://${EUREKA_HOST:tourni-discovery-service}:${EUREKA_PORT:8761}
           predicates:
             - Path=/eureka/**
           filters:

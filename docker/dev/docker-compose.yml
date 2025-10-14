@@ -1,16 +1,20 @@
 # docker/docker-compose.dev.yml
-# DEVELOPMENT ENVIRONMENT
+# DEVELOPMENT ENVIRONMENT (Production-Grade Database Architecture)
 # 
 # SERVICE STARTUP ORDER:
-# 1. Infrastructure: vault-dev → vault-agent-dev → tourni-mysql-dev
+# 1. Infrastructure: vault-dev → vault-agent-dev → tourni-identity-mysql-dev + tourni-management-mysql-dev
 # 2. Service Discovery: tourni-discovery-dev → tourni-config-dev  
-# 3. Core Services: tourni-identity-dev → tourni-management-dev → tourni-ai-dev
+# 3. Core Services: tourni-identity-dev (uses identity DB) → tourni-management-dev (uses management DB) → tourni-ai-dev
 # 4. Gateway & UI: tourni-gateway-dev → tourni-ui-dev
 # 5. Observability: prometheus-dev, loki-dev, tempo-dev → grafana-dev
 #
-# Ports: 8xxx range (8080, 8761, 3306, etc.)
+# DATABASE ARCHITECTURE (Microservice Pattern):
+# - Identity Service → tourni-identity-mysql-dev (port 3306) - Dedicated instance
+# - Management Service → tourni-management-mysql-dev (port 3307) - Dedicated instance
+#
+# Ports: 8xxx range (8080, 8761, etc.), MySQL: 3306, 3307
 # Network: tourni-network-dev
-# Data: docker/data/dev/*
+# Data: Separate volumes per database (identity-mysql-data-dev, management-mysql-data-dev)
 
 version: "3.9"
 
@@ -86,19 +90,22 @@ services:
           memory: 128M
           cpus: '0.1'
 
-  tourni-mysql-dev:
-    container_name: tourni-mysql-dev
+  # ========================================
+  # IDENTITY SERVICE DATABASE (Dedicated MySQL Instance)
+  # ========================================
+  tourni-identity-mysql-dev:
+    container_name: tourni-identity-mysql-dev
     image: mysql:8.0.13
     platform: linux/amd64
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /vault/secrets/mysql_root_password
-      MYSQL_DATABASE: tournament_db_dev
-      MYSQL_USER: tournament_admin
+      MYSQL_DATABASE: identity_db_dev
+      MYSQL_USER: identity_admin
       MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
     ports:
       - "3306:3306"
     volumes:
-      - mysql-data-dev:/var/lib/mysql
+      - identity-mysql-data-dev:/var/lib/mysql
       - vault-secrets-dev:/vault/secrets:ro
     networks:
       - tourni-network-dev
@@ -118,11 +125,52 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
-          cpus: '1.0'
-        reservations:
           memory: 1G
           cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # ========================================
+  # MANAGEMENT SERVICE DATABASE (Dedicated MySQL Instance)
+  # ========================================
+  tourni-management-mysql-dev:
+    container_name: tourni-management-mysql-dev
+    image: mysql:8.0.13
+    platform: linux/amd64
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /vault/secrets/mysql_root_password
+      MYSQL_DATABASE: management_db_dev
+      MYSQL_USER: management_admin
+      MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - management-mysql-data-dev:/var/lib/mysql
+      - vault-secrets-dev:/vault/secrets:ro
+    networks:
+      - tourni-network-dev
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$(cat /vault/secrets/mysql_root_password)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      vault-agent-dev:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
 
   # ========================================
   # SERVICE DISCOVERY & CONFIG LAYER (Startup Order: 4-5)
@@ -139,11 +187,6 @@ services:
       - "8761:8761"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-dev
     networks:
@@ -169,18 +212,11 @@ services:
       - "8888:8888"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-dev
     networks:
       - tourni-network-dev
     depends_on:
-      tourni-mysql-dev:
-        condition: service_healthy
       tourni-discovery-dev:
         condition: service_healthy
     healthcheck:
@@ -208,13 +244,15 @@ services:
       - "8082:8082"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://tourni-config-dev:8888
       - JWT_SECRET=${JWT_SECRET}
       - JWT_SECRET_FILE=/vault/secrets/jwt_secret
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
+      # Dedicated MySQL instance for identity service
+      - MYSQL_HOST=tourni-identity-mysql-dev
+      - MYSQL_DATABASE=identity_db_dev
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
+      - MYSQL_USER=identity_admin
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-dev
       - TEMPO_HOST=tempo
@@ -227,7 +265,7 @@ services:
     depends_on:
       vault-agent-dev:
         condition: service_healthy
-      tourni-mysql-dev:
+      tourni-identity-mysql-dev:
         condition: service_healthy
       tourni-config-dev:
         condition: service_healthy
@@ -254,11 +292,13 @@ services:
       - "8083:8083"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://tourni-config-dev:8888
+      # Dedicated MySQL instance for management service
+      - MYSQL_HOST=tourni-management-mysql-dev
+      - MYSQL_DATABASE=management_db_dev
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
+      - MYSQL_USER=management_admin
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-dev
       - TEMPO_HOST=tempo
@@ -267,7 +307,7 @@ services:
     networks:
       - tourni-network-dev
     depends_on:
-      tourni-mysql-dev:
+      tourni-management-mysql-dev:
         condition: service_healthy
       tourni-config-dev:
         condition: service_healthy
@@ -296,11 +336,6 @@ services:
       - "8084:8084"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - MYSQL_HOST=tourni-mysql-dev
-      - MYSQL_DATABASE=tournament_db_dev
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_PORT=3306
-      - MYSQL_USER=tournament_admin
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-dev
       - TEMPO_HOST=tempo
@@ -309,8 +344,6 @@ services:
     networks:
       - tourni-network-dev
     depends_on:
-      tourni-mysql-dev:
-        condition: service_healthy
       tourni-discovery-dev:
         condition: service_healthy
       tourni-config-dev:
@@ -350,6 +383,8 @@ services:
       - MYSQL_PORT=3306
       - MYSQL_USER=tournament_admin
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-dev:8761/eureka/
+      - EUREKA_HOST=tourni-discovery-dev
+      - EUREKA_PORT=8761
       - CONFIG_SERVICE_HOST=tourni-config-dev
       - JWT_SECRET=${JWT_SECRET}
       - JWT_SECRET_FILE=/vault/secrets/jwt_secret
@@ -549,16 +584,17 @@ services:
     ports:
       - "8090:80"
     environment:
-      - PMA_HOST=tourni-mysql-dev
-      - PMA_PORT=3306
-      - PMA_USER=tournament_admin
-      - PMA_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      # Supports multiple MySQL hosts - select on login page
+      - PMA_HOSTS=tourni-identity-mysql-dev,tourni-management-mysql-dev
+      - PMA_PORTS=3306,3306
+      - PMA_ARBITRARY=1
     networks:
       - tourni-network-dev
     restart: unless-stopped
     depends_on:
-      tourni-mysql-dev:
+      tourni-identity-mysql-dev:
+        condition: service_healthy
+      tourni-management-mysql-dev:
         condition: service_healthy
     deploy:
       resources:
@@ -570,7 +606,10 @@ services:
           cpus: '0.1'
 
 volumes:
-  mysql-data-dev:
+  # Separate database volumes for each microservice
+  identity-mysql-data-dev:
+    driver: local
+  management-mysql-data-dev:
     driver: local
   vault-data-dev:
     driver: local

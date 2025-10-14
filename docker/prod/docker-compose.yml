@@ -1,14 +1,21 @@
 # docker/docker-compose.prod.yml
-# PRODUCTION ENVIRONMENT
+# PRODUCTION ENVIRONMENT - PRODUCTION-GRADE DATABASE ARCHITECTURE
 # 
-# SERVICE STARTUP ORDER:
-# 1. Infrastructure: vault-prod → vault-agent-prod → tourni-mysql-prod
-# 2. Service Discovery: tourni-discovery-prod → tourni-config-prod  
-# 3. Core Services: tourni-identity-prod → tourni-management-prod → tourni-ai-prod
-# 4. Gateway & UI: tourni-gateway-prod → tourni-ui-prod
-# 5. Observability: prometheus-prod, loki-prod, tempo-prod → grafana-prod
+# DATABASE ARCHITECTURE:
+# - Each microservice has its own dedicated MySQL instance
+# - Identity Service → tourni-identity-mysql-prod (port 3308)
+# - Management Service → tourni-management-mysql-prod (port 3309)
+# - Benefits: Data isolation, independent scaling, failure isolation
 #
-# Ports: 10xxx range (10080, 10761, 3308, etc.)
+# SERVICE STARTUP ORDER:
+# 1. Infrastructure: vault-prod → vault-agent-prod
+# 2. Databases: tourni-identity-mysql-prod, tourni-management-mysql-prod
+# 3. Service Discovery: tourni-discovery-prod → tourni-config-prod  
+# 4. Core Services: tourni-identity-prod → tourni-management-prod → tourni-ai-prod
+# 5. Gateway & UI: tourni-gateway-prod → tourni-ui-prod
+# 6. Observability: prometheus-prod, loki-prod, tempo-prod → grafana-prod
+#
+# Ports: 10xxx range (10080, 10761, etc.)
 # Network: tourni-network-prod
 # Data: docker/data/prod/*
 #
@@ -92,19 +99,63 @@ services:
           memory: 256M
           cpus: '0.25'
 
-  tourni-mysql-prod:
-    container_name: tourni-mysql-prod
+  # ========================================
+  # IDENTITY SERVICE DATABASE (Dedicated MySQL Instance)
+  # ========================================
+  tourni-identity-mysql-prod:
+    container_name: tourni-identity-mysql-prod
     image: mysql:8.0.13
     platform: linux/amd64
     environment:
       MYSQL_ROOT_PASSWORD_FILE: /vault/secrets/mysql_root_password
-      MYSQL_DATABASE: tournament_db_prod
-      MYSQL_USER: tournament_admin
+      MYSQL_DATABASE: identity_db_prod
+      MYSQL_USER: identity_admin
       MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
     ports:
       - "3308:3306"
     volumes:
-      - mysql-data-prod:/var/lib/mysql
+      - identity-mysql-data-prod:/var/lib/mysql
+      - vault-secrets-prod:/vault/secrets:ro
+    networks:
+      - tourni-network-prod
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$$(cat /vault/secrets/mysql_root_password)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    depends_on:
+      vault-agent-prod:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # ========================================
+  # MANAGEMENT SERVICE DATABASE (Dedicated MySQL Instance)
+  # ========================================
+  tourni-management-mysql-prod:
+    container_name: tourni-management-mysql-prod
+    image: mysql:8.0.13
+    platform: linux/amd64
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /vault/secrets/mysql_root_password
+      MYSQL_DATABASE: management_db_prod
+      MYSQL_USER: management_admin
+      MYSQL_PASSWORD_FILE: /vault/secrets/mysql_password
+    ports:
+      - "3309:3306"
+    volumes:
+      - management-mysql-data-prod:/var/lib/mysql
       - vault-secrets-prod:/vault/secrets:ro
     networks:
       - tourni-network-prod
@@ -144,8 +195,6 @@ services:
     ports:
       - "10761:8761"
     environment:
-      - MYSQL_HOST=tourni-mysql-prod
-      - MYSQL_DATABASE=tournament_db_prod
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-prod
       - SPRING_PROFILES_ACTIVE=prod  # Production profile
@@ -180,8 +229,6 @@ services:
     ports:
       - "10888:8888"
     environment:
-      - MYSQL_HOST=tourni-mysql-prod
-      - MYSQL_DATABASE=tournament_db_prod
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-prod
       - SPRING_PROFILES_ACTIVE=prod
@@ -192,8 +239,6 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      tourni-mysql-prod:
-        condition: service_healthy
       tourni-discovery-prod:
         condition: service_healthy
     healthcheck:
@@ -225,16 +270,18 @@ services:
     ports:
       - "10082:8082"
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://tourni-config-prod:8888
       - JWT_SECRET=${JWT_SECRET}
       - JWT_SECRET_FILE=/vault/secrets/jwt_secret
-      - MYSQL_HOST=tourni-mysql-prod
-      - MYSQL_DATABASE=tournament_db_prod
-      - MYSQL_USER=tournament_admin
+      # Dedicated MySQL instance for identity service
+      - MYSQL_HOST=tourni-identity-mysql-prod
+      - MYSQL_DATABASE=identity_db_prod
+      - MYSQL_USER=identity_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-prod
-      - SPRING_PROFILES_ACTIVE=prod
       - LOGGING_LEVEL_ROOT=WARN
       - TEMPO_HOST=tempo
       - LOKI_HOST=loki
@@ -249,7 +296,7 @@ services:
     depends_on:
       vault-agent-prod:
         condition: service_healthy
-      tourni-mysql-prod:
+      tourni-identity-mysql-prod:
         condition: service_healthy
       tourni-config-prod:
         condition: service_healthy
@@ -280,14 +327,16 @@ services:
     ports:
       - "10083:8083"
     environment:
-      - MYSQL_HOST=tourni-mysql-prod
-      - MYSQL_DATABASE=tournament_db_prod
-      - MYSQL_USER=tournament_admin
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://tourni-config-prod:8888
+      # Dedicated MySQL instance for management service
+      - MYSQL_HOST=tourni-management-mysql-prod
+      - MYSQL_DATABASE=management_db_prod
+      - MYSQL_USER=management_admin
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-prod
-      - SPRING_PROFILES_ACTIVE=prod
       - LOGGING_LEVEL_ROOT=WARN
       - TEMPO_HOST=tempo
       - LOKI_HOST=loki
@@ -298,7 +347,7 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      tourni-mysql-prod:
+      tourni-management-mysql-prod:
         condition: service_healthy
       tourni-config-prod:
         condition: service_healthy
@@ -331,11 +380,6 @@ services:
     ports:
       - "10084:8084"
     environment:
-      - MYSQL_HOST=tourni-mysql-prod
-      - MYSQL_DATABASE=tournament_db_prod
-      - MYSQL_USER=tournament_admin
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-      - MYSQL_PORT=3306
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
       - CONFIG_SERVICE_HOST=tourni-config-prod
       - SPRING_PROFILES_ACTIVE=prod
@@ -349,8 +393,6 @@ services:
     security_opt:
       - no-new-privileges:true
     depends_on:
-      tourni-mysql-prod:
-        condition: service_healthy
       tourni-discovery-prod:
         condition: service_healthy
       tourni-config-prod:
@@ -395,6 +437,8 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_PORT=3306
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://tourni-discovery-prod:8761/eureka/
+      - EUREKA_HOST=tourni-discovery-prod
+      - EUREKA_PORT=8761
       - CONFIG_SERVICE_HOST=tourni-config-prod
       - SPRING_PROFILES_ACTIVE=prod
       - LOGGING_LEVEL_ROOT=WARN
@@ -605,7 +649,10 @@ services:
           cpus: '0.5'
 
 volumes:
-  mysql-data-prod:
+  # Dedicated MySQL volumes for microservice isolation
+  identity-mysql-data-prod:
+    driver: local
+  management-mysql-data-prod:
     driver: local
   vault-data-prod:
     driver: local
