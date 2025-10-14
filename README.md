@@ -29,9 +29,6 @@ TOURNA-MATE is a Spring Cloud microservices platform demonstrating enterprise pa
 
 | Metric | Value | Context |
 |--------|-------|---------|
-| **Gateway Auth** | 1-2ms | Local JWT validation vs 50-100ms service call |
-| **API Response** | <50ms (p95) | With HikariCP connection pooling |
-| **Concurrent Requests** | 10,000+ | Non-blocking reactive gateway (Spring WebFlux) |
 | **Docker Images** | ~300MB | JRE-based multi-stage builds (25% reduction) |
 | **Environments** | 3 isolated | Dev/Staging/Prod running simultaneously |
 | **Services** | 7 microservices | 2 databases (dedicated per service) |
