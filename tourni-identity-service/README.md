@@ -1,45 +1,99 @@
-# 🔐 Identity Service
+# Identity Service
 
-> JWT-based authentication and authorization microservice providing user registration, login, and token management for the TOURNA-MATE platform.
+> JWT-based authentication microservice providing user management and token generation
 
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Spring Security](https://img.shields.io/badge/Spring%20Security-6.2.1-brightgreen.svg)](https://spring.io/projects/spring-security)
-[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
+[![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
 
 ---
 
-## What It Does
+## Purpose
 
-Handles user authentication, JWT token generation, role management, and provides a secure foundation for all TOURNA-MATE services.
+Centralized authentication service handling user registration, login, JWT token generation, and role management for the TOURNA-MATE platform.
 
-**Key Capabilities:**
-- **User Registration**: Create accounts with BCrypt password hashing (cost factor 12)
-- **JWT Token Generation**: Stateless tokens valid for 24 hours
-- **Multi-Role Support**: ADMIN, USER, MANAGER, VIEWER roles (expandable)
-- **Token Versioning**: Incremental version invalidates old tokens on role changes
-- **Automatic Audit Trail**: Who created/modified users and when (JPA Auditing)
-- **Optimistic Locking**: Prevents concurrent modification conflicts (@Version)
+### Core Responsibilities
 
-**Security Metrics:**
-- **Password Hashing**: BCrypt (cost 12) = 2^12 iterations (~200ms per hash)
-- **Token Expiration**: 24 hours (configurable)
-- **Stateless**: No session storage, scales horizontally
+- **User Registration**: Account creation with BCrypt password hashing
+- **Authentication**: Credential validation and JWT token issuance
+- **Token Management**: JWT generation with embedded roles and expiration
+- **Role Management**: Multi-role support (ADMIN, USER) with extensibility
+- **Token Versioning**: Incremental versioning for immediate token invalidation
+
+### Security Metrics
+
+| Aspect | Implementation | Value |
+|--------|---------------|-------|
+| **Password Hashing** | BCrypt (cost factor 12) | ~250ms per hash, 2^12 iterations |
+| **Token Validity** | JWT expiration | 24 hours default |
+| **Token Algorithm** | HS256 (HMAC-SHA256) | Symmetric key signing |
+| **Stateless Auth** | No session storage | Horizontal scaling without shared state |
 
 ---
 
-## Quick Start
+## Architecture
 
-### Run Locally
-
-```bash
-cd tourni-identity-service
-mvn spring-boot:run
-
-# Service runs on port 8082
+```
+┌─────────┐
+│ Client  │
+└────┬────┘
+     │
+     │ POST /api/v1/auth/register
+     │ POST /api/v1/auth/authenticate
+     ▼
+┌────────────────────────────────────────┐
+│   API Gateway                          │
+│   (Routes to Identity Service)         │
+└────────────────┬───────────────────────┘
+                 │
+                 ▼
+┌────────────────────────────────────────┐
+│   Identity Service (Port 8082)         │
+│                                        │
+│   ┌──────────────────────────────┐    │
+│   │ 1. Registration              │    │
+│   │    - Validate input          │    │
+│   │    - Hash password (BCrypt)  │    │
+│   │    - Save to database        │    │
+│   │    - Generate JWT            │    │
+│   └──────────────────────────────┘    │
+│                                        │
+│   ┌──────────────────────────────┐    │
+│   │ 2. Authentication            │    │
+│   │    - Find user by username   │    │
+│   │    - Verify password (BCrypt)│    │
+│   │    - Generate JWT token      │    │
+│   │    - Return token + roles    │    │
+│   └──────────────────────────────┘    │
+│                                        │
+│   ┌──────────────────────────────┐    │
+│   │ 3. JWT Generation            │    │
+│   │    - Username (subject)      │    │
+│   │    - Roles (claim)           │    │
+│   │    - Email (claim)           │    │
+│   │    - Expiration (24h)        │    │
+│   │    - Sign with secret key    │    │
+│   └──────────────────────────────┘    │
+└────────────────┬───────────────────────┘
+                 │
+                 ▼
+        ┌────────────────┐
+        │ MySQL Database │
+        │ identity_db    │
+        │                │
+        │ • app_user     │
+        │ • app_user_role│
+        └────────────────┘
 ```
 
-### Register a User
+---
+
+## API Endpoints
+
+### 1. Register User
+
+**POST** `/api/v1/auth/register`
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register \
@@ -54,12 +108,12 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
   }'
 ```
 
-**Response:**
+**Response** (201 Created):
 ```json
 {
   "status": "SUCCESS",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huX2RvZSIsInJvbGVzIjpbIlVTRVIiXSwiaWF0IjoxNzA2MTIzNDU2LCJleHAiOjE3MDYyMDk4NTZ9...",
+    "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqb2huX2RvZSIsInJvbGVzIjoiVVNFUiIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTcwNjEyMzQ1NiwiZXhwIjoxNzA2MjA5ODU2fQ...",
     "expiryTime": "24 Hours",
     "username": "john_doe",
     "email": "john@example.com",
@@ -68,7 +122,16 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 }
 ```
 
-### Login (Authenticate)
+**Processing**:
+1. Validate input (username unique, password strength)
+2. Hash password with BCrypt (cost 12, ~250ms)
+3. Save user to database with role assignments
+4. Generate JWT token
+5. Return token for immediate use
+
+### 2. Authenticate (Login)
+
+**POST** `/api/v1/auth/authenticate`
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/authenticate \
@@ -79,401 +142,308 @@ curl -X POST http://localhost:8080/api/v1/auth/authenticate \
   }'
 ```
 
-### Test Credentials (Development Only)
-
-```
-Username: admin
-Password: admin@4789
-Roles: ADMIN, USER
-
-Username: user
-Password: admin@4789
-Roles: USER
-```
-
----
-
-## Architecture
-
-```
-┌─────────────┐
-│   Client    │
-└──────┬──────┘
-       │
-       │ 1. POST /api/v1/auth/register or /authenticate
-       ↓
-┌──────────────────┐
-│  API Gateway     │ (forwards to Identity Service)
-└──────┬───────────┘
-       │
-       │ 2. Validate credentials
-       ↓
-┌──────────────────────────────────────────────┐
-│        Identity Service (Port 8082)          │
-│                                              │
-│  ┌────────────────────────────────────┐    │
-│  │ AppAuthenticationController        │    │
-│  └────────────┬───────────────────────┘    │
-│               ↓                            │
-│  ┌────────────────────────────────────┐    │
-│  │ AppAuthenticationService           │    │
-│  │  - loadUserByUsername()            │    │
-│  │  - BCrypt password validation      │    │
-│  └────────────┬───────────────────────┘    │
-│               ↓                            │
-│  ┌────────────────────────────────────┐    │
-│  │ MySQL Database                     │    │
-│  │  Tables: app_user, user_roles      │    │
-│  └────────────┬───────────────────────┘    │
-│               ↓                            │
-│  ┌────────────────────────────────────┐    │
-│  │ JWTService                         │    │
-│  │  - generateToken()                 │    │
-│  │  - Include: username, roles, email │    │
-│  │  - Expiration: 24 hours            │    │
-│  └────────────────────────────────────┘    │
-└──────────────────────────────────────────────┘
-       │
-       │ 3. Return JWT token
-       ↓
-┌──────────────────┐
-│   Client Stores  │
-│   JWT Token      │
-└──────────────────┘
-```
-
-**Design Decisions:**
-- **Stateless Tokens**: No session storage → horizontal scaling without sticky sessions
-- **Token Versioning**: Role changes increment version → invalidates old tokens
-- **BCrypt Cost 12**: Balance between security (2^12 iterations) and performance (~200ms)
-- **Separate Service**: Security isolation, independent scaling, bounded context
-
----
-
-## API Endpoints
-
-### Authentication Endpoints
-
-| Method | Endpoint | Description | Auth Required | Roles |
-|--------|----------|-------------|---------------|-------|
-| POST | `/api/v1/auth/register` | Create new user | No | - |
-| POST | `/api/v1/auth/authenticate` | Login, get JWT token | No | - |
-| POST | `/api/v1/auth/validateToken` | Validate JWT token | No | - |
-| GET | `/api/v1/auth/generateToken?username={username}` | Generate token for user | No | - |
-
-### Examples
-
-#### Register
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "alice",
-    "password": "SecurePass456",
-    "firstName": "Alice",
-    "lastName": "Smith",
-    "email": "alice@example.com",
-    "roles": ["USER", "ADMIN"]
-  }'
-```
-
-#### Authenticate (Login)
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/authenticate \
-  -H "Content-Type: application/json" \
-  -d '{
+**Response** (200 OK):
+```json
+{
+  "status": "SUCCESS",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiJ9...",
+    "expiryTime": "24 Hours",
     "username": "admin",
-    "password": "admin@4789"
-  }'
+    "email": "admin@tournimate.com",
+    "roles": ["ADMIN", "USER"]
+  }
+}
 ```
 
-#### Validate Token
+**Processing**:
+1. Query database for user by username
+2. Compare provided password with stored BCrypt hash (~250ms)
+3. If match → Generate JWT with user's current roles
+4. If no match → Return 401 Unauthorized
 
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/validateToken \
-  -H "Content-Type: application/json" \
-  -d '{"token": "eyJhbGciOiJIUzI1NiJ9..."}'
-```
+### 3. Validate Token (Internal)
 
----
+**POST** `/api/v1/auth/validateToken`
 
-## Technology Stack
+Used by gateway for JWT validation (Note: Gateway performs local validation instead).
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Spring Boot** | 3.2.1 | Application framework |
-| **Spring Security** | 6.2.1 | Authentication & authorization |
-| **Spring Data JPA** | 3.2.1 | Database abstraction (ORM) |
-| **JWT (jjwt)** | 0.11.5 | Token generation & parsing |
-| **MySQL** | 8.0 | User persistence |
-| **Flyway** | - | Database migrations (future) |
-| **BCrypt** | - | Password hashing (cost factor 12) |
-| **Lombok** | - | Boilerplate reduction |
-| **OpenAPI 3.0** | 2.3.0 | API documentation |
+### 4. Generate Token (Internal)
+
+**POST** `/api/v1/auth/generateToken`
+
+Generate new token for existing user (used for token refresh flows).
 
 ---
 
 ## Database Schema
 
-### app_user Table
+### Table: `app_user`
 
-```sql
-CREATE TABLE app_user (
-    username VARCHAR(255) PRIMARY KEY,
-    password VARCHAR(255) NOT NULL,
-    first_name VARCHAR(255) NOT NULL,
-    last_name VARCHAR(255),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    token_version INT DEFAULT 0 NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    version BIGINT,  -- Optimistic locking
-    record_created_date TIMESTAMP NOT NULL,
-    record_created_by VARCHAR(255) NOT NULL,
-    record_updated_date TIMESTAMP,
-    record_updated_by VARCHAR(255)
-);
+| Column | Type | Constraints | Purpose |
+|--------|------|-------------|---------|
+| `user_id` | BIGINT | PRIMARY KEY | Unique identifier |
+| `username` | VARCHAR(100) | UNIQUE, NOT NULL | Login username |
+| `password` | VARCHAR(255) | NOT NULL | BCrypt hashed password |
+| `first_name` | VARCHAR(100) | - | User's first name |
+| `last_name` | VARCHAR(100) | - | User's last name |
+| `email` | VARCHAR(255) | UNIQUE | User's email |
+| `token_version` | INT | DEFAULT 0 | Token invalidation mechanism |
+| `record_created_date` | TIMESTAMP | AUTO | Audit trail |
+| `record_created_by` | VARCHAR(100) | - | Audit trail |
+| `record_updated_date` | TIMESTAMP | AUTO | Audit trail |
+| `record_updated_by` | VARCHAR(100) | - | Audit trail |
+| `version` | BIGINT | DEFAULT 0 | Optimistic locking |
+
+### Table: `app_user_roles`
+
+| Column | Type | Constraints | Purpose |
+|--------|------|-------------|---------|
+| `user_id` | BIGINT | FOREIGN KEY → app_user | References user |
+| `roles` | VARCHAR(50) | - | Role name (ADMIN, USER, etc.) |
+
+**Relationship**: One user → Many roles (one-to-many)
+
+---
+
+## Implementation Details
+
+### Password Security
+
+**BCrypt Configuration**:
+```java
+@Bean
+public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder(12);  // Cost factor 12
+}
 ```
 
-### user_roles Table (Many-to-Many)
+**Why BCrypt**:
+- Adaptive hashing (cost increases with hardware improvements)
+- Built-in salt generation
+- Industry standard for password storage
+- Cost factor 12 = 2^12 (4,096) iterations
 
-```sql
-CREATE TABLE user_roles (
-    username VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL,
-    PRIMARY KEY (username, role),
-    FOREIGN KEY (username) REFERENCES app_user(username)
-);
+**Performance Trade-off**:
+- Registration: ~250ms per user (acceptable, one-time)
+- Login: ~250ms verification (acceptable for security)
+
+**Alternative Considered**: Argon2 rejected due to Spring Security's default BCrypt integration.
+
+### JWT Token Generation
+
+**Token Structure**:
+```json
+{
+  "sub": "admin",  // Subject (username)
+  "roles": "ADMIN,USER",  // Comma-separated roles
+  "email": "admin@tournimate.com",
+  "iat": 1706123456,  // Issued at (Unix timestamp)
+  "exp": 1706209856   // Expiration (Unix timestamp, 24h later)
+}
 ```
 
-**Sample Data:**
-```sql
--- User: admin (password: admin@4789)
-username: admin
-roles: ADMIN, USER
+**Implementation**:
+```java
+public String generateToken(AppUser user) {
+    Map<String, Object> claims = new HashMap<>();
+    claims.put("roles", user.getRoles().stream()
+        .map(AppUserRole::getRoleName)
+        .collect(Collectors.joining(",")));
+    claims.put("email", user.getEmail());
+    
+    return Jwts.builder()
+        .setClaims(claims)
+        .setSubject(user.getUsername())
+        .setIssuedAt(new Date())
+        .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+        .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+        .compact();
+}
+```
 
--- User: user (password: admin@4789)
-username: user
-roles: USER
+### Token Versioning (Future Enhancement)
+
+**Problem**: User role changed, but existing JWT valid for 24 hours
+
+**Solution**: Token version field in database
+```java
+@Entity
+public class AppUser {
+    @Column(name = "token_version")
+    private Integer tokenVersion = 0;
+    
+    public void incrementTokenVersion() {
+        this.tokenVersion++;
+    }
+}
+```
+
+**Validation**:
+```java
+if (tokenVersion != user.getTokenVersion()) {
+    throw new TokenInvalidException("Token version mismatch");
+}
+```
+
+**Result**: All tokens invalidated immediately when roles change
+
+---
+
+## Security Considerations
+
+### Password Storage
+
+**Never Store Plain Text**:
+```java
+// ❌ Wrong
+user.setPassword(request.getPassword());
+
+// ✅ Correct
+user.setPassword(passwordEncoder.encode(request.getPassword()));
+```
+
+### JWT Secret Key
+
+**Configuration**:
+```yaml
+jwt:
+  secret: ${JWT_SECRET}  # Injected from environment variable or Vault
+  expiration: 86400000  # 24 hours in milliseconds
+```
+
+**Security**:
+- Secret key stored in Vault (not in code)
+- Minimum 256 bits for HS256
+- Shared with API Gateway for local validation
+
+### Role Hierarchy
+
+**Implementation**: ADMIN inherits USER permissions
+```java
+public boolean hasRole(String role) {
+    if (roles.contains("ADMIN")) {
+        return true;  // ADMIN satisfies any role check
+    }
+    return roles.contains(role);
+}
+```
+
+---
+
+## Development
+
+### Run Locally
+
+```bash
+cd tourni-identity-service
+mvn spring-boot:run
+
+# Requires MySQL on port 3306
+# Database: identity_db_dev
+```
+
+### Test Credentials (Development Only)
+
+| Username | Password | Roles |
+|----------|----------|-------|
+| `admin` | `admin@4789` | ADMIN, USER |
+| `user` | `admin@4789` | USER |
+
+**Note**: Passwords are BCrypt hashed in database
+
+### Dependencies
+
+```xml
+<!-- Spring Security -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+<!-- JWT -->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-api</artifactId>
+    <version>0.11.5</version>
+</dependency>
+
+<!-- JPA -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+
+<!-- MySQL -->
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+</dependency>
 ```
 
 ---
 
 ## Configuration
 
-### External Configuration (from Config Server)
+### Database
 
 ```yaml
-# Loaded from: https://github.com/raju4789/tourni-config/tourni-identity-service.yml
-
-jwt:
-  secret: ${VAULT_JWT_SECRET}  # Stored in Vault for security
-  expiration: 86400000          # 24 hours in milliseconds
-
 spring:
   datasource:
-    url: jdbc:mysql://mysql:3306/identity_db
-    username: ${VAULT_DB_USERNAME}
-    password: ${VAULT_DB_PASSWORD}
-    
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/identity_db_dev
+    username: identity_admin
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update           # Creates/updates tables automatically
-    show-sql: false              # Disable SQL logging in production
-    auditing:
-      enabled: true              # Enable JPA auditing
-
-  security:
-    password-encoder: BCrypt     # BCrypt with cost factor 12
+      ddl-auto: update  # Dev: update, Prod: validate
+    show-sql: true  # Dev only
+    properties:
+      hibernate:
+        format_sql: true
 ```
 
-### Local Bootstrap (application.yml)
+### JWT
 
 ```yaml
-server:
-  port: 8082
-
-spring:
-  application:
-    name: tourni-identity-service
-  config:
-    import: "optional:configserver:http://tourni-config-server:8888"
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000  # 24 hours
 ```
 
 ---
 
-## Security Implementation
+## Monitoring
 
-### Password Hashing (BCrypt)
+### Health Check
 
-**Why BCrypt with Cost Factor 12?**
-- **Adaptive**: Cost factor increases as hardware improves
-- **Salt**: Random salt per password (prevents rainbow tables)
-- **Slow**: 2^12 iterations (~200ms) makes brute-force attacks impractical
-
-```java
-// Automatically handled by Spring Security
-BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
-String hashedPassword = encoder.encode("plainPassword");
-// Result: $2a$12$2GgsW45hrAFhmbNbojj3m./wpbEud9YK/LgX1SmkfHIQxpCUE4M/O
+```bash
+curl http://localhost:8082/actuator/health
 ```
 
-### Token Versioning
+### Metrics
 
-**Problem**: How to immediately invalidate tokens when user roles change?
+```bash
+# Prometheus metrics
+curl http://localhost:8082/actuator/prometheus
 
-**Solution**: Token versioning
-
-```java
-// AppUser entity
-private Integer tokenVersion = 0;  // Incremented on role/password changes
-
-// When roles change
-user.addRole(AppUserRole.ADMIN);
-user.incrementTokenVersion();  // Old tokens now invalid
+# Key metrics to monitor:
+# - authentication_requests_total
+# - authentication_failures_total
+# - jwt_generation_duration_seconds
+# - password_encoding_duration_seconds
 ```
-
-**JWT Payload:**
-```json
-{
-  "sub": "admin",
-  "roles": ["ADMIN", "USER"],
-  "email": "admin@tournimate.com",
-  "tokenVersion": 5,  // Must match database
-  "iat": 1706123456,
-  "exp": 1706209856
-}
-```
-
-### JPA Auditing
-
-Automatically tracks who/when for all changes:
-
-```java
-@EntityListeners(AuditingEntityListener.class)
-public class AppUser {
-    @CreatedDate
-    private LocalDateTime recordCreatedDate;
-    
-    @CreatedBy
-    private String recordCreatedBy;
-    
-    @LastModifiedDate
-    private LocalDateTime recordUpdatedDate;
-    
-    @LastModifiedBy
-    private String recordUpdatedBy;
-}
-```
-
-**Example Data:**
-```
-username: john_doe
-record_created_date: 2024-01-25 10:30:00
-record_created_by: admin
-record_updated_date: 2024-01-26 14:15:00
-record_updated_by: john_doe
-```
-
----
-
-## Production Considerations
-
-### Security
-- ✅ **Passwords Hashed**: BCrypt cost factor 12 (~200ms per hash)
-- ✅ **JWT Secrets in Vault**: Never commit secrets to Git
-- ✅ **Token Versioning**: Immediate role revocation
-- ⚠️ **Recommended**: Add refresh tokens (15min access + 7d refresh)
-- ⚠️ **Recommended**: Account lockout after 5 failed attempts
-- ⚠️ **Recommended**: Email verification on registration
-
-### Performance
-- **Stateless**: No session storage, scales horizontally
-- **Connection Pool**: HikariCP with 10 connections (configurable)
-- **Query Optimization**: Username and email indexed (unique constraints)
-- **BCrypt Overhead**: ~200ms per login (acceptable for security)
-
-### Monitoring
-- **Metrics**: `/actuator/prometheus`
-  - Login attempts per second
-  - Failed login rate
-  - Token generation time
-- **Health**: `/actuator/health` (checks database connectivity)
-- **Tracing**: OpenTelemetry → Tempo (distributed traces)
-- **Logs**: Structured JSON → Loki
-
----
-
-## Interview Highlights
-
-**System Design:**
-- Why separate identity service? (Bounded context, security isolation, independent scaling)
-- Stateless vs stateful auth trade-offs (scalability vs immediate revocation)
-- How to handle role changes with JWT? (Token versioning, refresh tokens)
-- Why JWT over session cookies? (Stateless, cross-domain, mobile apps)
-
-**Security:**
-- BCrypt cost factor selection (balance security vs performance)
-- JWT expiration strategy (24h access token, 7d refresh token recommended)
-- OWASP Top 10 mitigations (SQL injection via JPA, XSS prevention, CSRF protection)
-- How to prevent token theft? (HTTPS, short expiration, refresh rotation)
-
-**Scalability:**
-- Horizontal scaling without sticky sessions (stateless JWT)
-- Database read replicas for user lookups
-- Redis for token blacklist (immediate revocation)
-- How to handle 10,000 concurrent logins? (Connection pooling, async processing)
 
 ---
 
 ## Future Enhancements
 
-| Feature | Priority | Impact | Effort |
-|---------|----------|--------|--------|
-| Refresh Token Rotation | 🔴 High | Reduced token theft risk | 2-3 days |
-| Account Lockout (5 attempts) | 🔴 High | Brute force prevention | 1-2 days |
-| OAuth2/OIDC (Google, GitHub) | 🟡 Medium | Social login support | 5-7 days |
-| 2FA/MFA (TOTP) | 🟡 Medium | Additional security layer | 3-5 days |
-| Email Verification | 🟡 Medium | Validate email ownership | 2-3 days |
-| Password Reset via Email | 🟡 Medium | User self-service | 2-3 days |
-| Rate Limiting (login attempts) | 🟢 Low | DDoS prevention | 1-2 days |
+- **Refresh Tokens**: Long-lived refresh tokens for better UX
+- **Token Revocation**: Blacklist for compromised tokens
+- **Multi-Factor Authentication**: TOTP/SMS verification
+- **OAuth2 Integration**: Social login (Google, GitHub)
+- **Password Reset**: Email-based password recovery
 
 ---
 
-## 🚀 What's Next?
-
-### Development Commands
-
-```bash
-# Run tests
-mvn test
-
-# Build Docker image
-docker build -t tourni-identity-service:latest .
-
-# Run with Docker Compose
-cd ../../docker/dev
-docker-compose up identity-service mysql
-
-# Check database
-docker exec -it mysql mysql -u root -p
-mysql> USE identity_db;
-mysql> SELECT username, email, is_active FROM app_user;
-```
-
-### Key Concepts
-- **JWT Generation**: Tokens include username, roles, email, expiration (24h)
-- **Password Security**: BCrypt (cost 12) with automatic salting
-- **Audit Trail**: JPA Auditing tracks who created/modified users
-- **Token Versioning**: Incremental version invalidates old tokens
-
-### Related Services
-- [Gateway](../tourni-gateway/README.md) - Validates JWT tokens
-- [Management Service](../tourni-management/README.md) - Uses user context
-- [Config Server](../tourni-config-server/README.md) - Provides configuration
-- [Discovery Service](../tourni-discovery-service/README.md) - Service registration
-
----
-
-**[← Back to Main README](../README.md)**
+[← Back to Main Documentation](../README.md)

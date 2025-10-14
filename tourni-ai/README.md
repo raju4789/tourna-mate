@@ -1,33 +1,287 @@
-# 🤖 AI Service
+# AI Service
 
-> AI-powered analytics and predictions service for tournament data (currently in development).
+> Machine learning service for tournament predictions and analytics (In Progress)
 
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
-[![Status](https://img.shields.io/badge/Status-In%20Development-yellow.svg)]()
+[![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
+[![Status](https://img.shields.io/badge/Status-In%20Progress-yellow.svg)]()
 
 ---
 
-## What It Does
+## Purpose
 
-**Current State:** Minimal viable service with test endpoint (placeholder for future AI features)
+Provides AI-powered insights for tournament management including match predictions, team analysis, and performance forecasting. Currently implements basic infrastructure with planned ML integration.
 
-**Planned Capabilities:**
-- Match outcome predictions using ML models
-- Player performance analytics
-- Tournament winner forecasting
-- Real-time match commentary generation
-- Team strength analysis based on historical data
-- Injury impact analysis on team performance
+### Planned Capabilities
 
-**Future Vision:**
-- **Predictive Analytics**: "India has 78% chance to win based on current form"
-- **Player Insights**: "Virat Kohli averages 72 runs in chase scenarios"
-- **Strategic Recommendations**: "Bowl spinners in powerplay (85% success rate)"
+- **Match Prediction**: Predict match outcomes based on historical data
+- **Team Analysis**: Analyze team strengths and weaknesses
+- **Player Performance**: Individual player statistics and trends
+- **Tournament Insights**: Strategic insights using natural language (OpenAI GPT)
+- **Recommendation Engine**: Suggest optimal team compositions
 
 ---
 
-## Quick Start
+## Current Status
+
+### Implemented ✅
+- Spring Boot microservice infrastructure
+- Eureka service registration
+- Config Server integration
+- Health check endpoints
+- Basic test endpoint
+
+### In Progress 🚧
+- OpenAI GPT integration for natural language insights
+- Statistical analysis algorithms
+- Historical data analysis
+- Match prediction models
+
+### Planned 📋
+- Machine learning model training
+- Real-time prediction API
+- Performance analytics dashboard
+- Integration with Management Service via Kafka
+
+---
+
+## Architecture (Future)
+
+```
+┌────────────────────────────────────────────┐
+│   Management Service                       │
+│                                            │
+│   Match Result Added                       │
+│   ↓                                        │
+│   Publish MatchResultEvent → Kafka        │
+└────────────────┬───────────────────────────┘
+                 │
+                 │ Event Stream
+                 ▼
+┌────────────────────────────────────────────┐
+│   AI Service (Port 8084)                   │
+│                                            │
+│   ┌─────────────────────────────────┐     │
+│   │ 1. Consume Events (Kafka)       │     │
+│   │    - Match results               │     │
+│   │    - Team updates                │     │
+│   └─────────────┬───────────────────┘     │
+│                 │                          │
+│   ┌─────────────▼───────────────────┐     │
+│   │ 2. Feature Engineering           │     │
+│   │    - Calculate features         │     │
+│   │    - Normalize data             │     │
+│   └─────────────┬───────────────────┘     │
+│                 │                          │
+│   ┌─────────────▼───────────────────┐     │
+│   │ 3. Model Inference               │     │
+│   │    - Statistical models         │     │
+│   │    - ML predictions             │     │
+│   └─────────────┬───────────────────┘     │
+│                 │                          │
+│   ┌─────────────▼───────────────────┐     │
+│   │ 4. OpenAI Integration            │     │
+│   │    - Generate insights          │     │
+│   │    - Natural language output    │     │
+│   └─────────────┬───────────────────┘     │
+│                 │                          │
+│   ┌─────────────▼───────────────────┐     │
+│   │ 5. Cache & Serve                 │     │
+│   │    - Redis cache predictions    │     │
+│   │    - REST API endpoints         │     │
+│   └──────────────────────────────────┘     │
+└────────────────────────────────────────────┘
+```
+
+---
+
+## Current API Endpoints
+
+### 1. Health Check
+
+**GET** `/actuator/health`
+
+```bash
+curl http://localhost:8080/api/v1/ai/actuator/health
+```
+
+### 2. Test Endpoint
+
+**GET** `/api/v1/ai/test`
+
+```bash
+curl http://localhost:8080/api/v1/ai/test \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+**Response**:
+```json
+{
+  "status": "SUCCESS",
+  "data": "AI Service is running. ML features coming soon."
+}
+```
+
+---
+
+## Planned API Endpoints
+
+### 1. Predict Match Outcome
+
+**POST** `/api/v1/ai/predict-match`
+
+```json
+{
+  "tournamentId": 101,
+  "team1Id": 1101,
+  "team2Id": 1102,
+  "venue": "Mumbai",
+  "matchType": "T20"
+}
+```
+
+**Response**:
+```json
+{
+  "status": "SUCCESS",
+  "data": {
+    "prediction": {
+      "winningTeamId": 1101,
+      "winProbability": 0.65,
+      "predictedScore": {
+        "team1": 185,
+        "team2": 170
+      },
+      "confidence": 0.78
+    },
+    "analysis": {
+      "keyFactors": [
+        "Team 1 has 75% win rate at this venue",
+        "Team 2 recent form: 2W-3L",
+        "Head-to-head: Team 1 leads 6-4"
+      ]
+    }
+  }
+}
+```
+
+### 2. Get Team Analysis
+
+**GET** `/api/v1/ai/team-analysis/{teamId}/{tournamentId}`
+
+```json
+{
+  "status": "SUCCESS",
+  "data": {
+    "teamName": "Mumbai Indians",
+    "statistics": {
+      "winRate": 0.64,
+      "avgScore": 178,
+      "avgDefense": 165,
+      "netRunRate": 1.23
+    },
+    "strengths": [
+      "Strong batting lineup",
+      "Effective death bowling"
+    ],
+    "weaknesses": [
+      "Middle-order collapse tendency",
+      "Inconsistent fielding"
+    ],
+    "aiInsights": "Based on recent performance, team shows strong form in home matches..."
+  }
+}
+```
+
+### 3. Get Tournament Insights
+
+**GET** `/api/v1/ai/tournament-insights/{tournamentId}`
+
+```json
+{
+  "status": "SUCCESS",
+  "data": {
+    "tournamentName": "IPL 2024",
+    "insights": {
+      "topPerformers": [
+        "Team A: Consistent performance",
+        "Player X: Leading run-scorer"
+      ],
+      "trends": [
+        "Higher scores in evening matches",
+        "Home advantage significant (65% win rate)"
+      ],
+      "predictions": {
+        "likelyChampion": "Mumbai Indians",
+        "probability": 0.42
+      },
+      "aiSummary": "Tournament characterized by high-scoring matches..."
+    }
+  }
+}
+```
+
+---
+
+## Technology Stack (Planned)
+
+### Machine Learning
+- **Apache Commons Math**: Statistical calculations
+- **DL4J (DeepLearning4J)**: Java-based deep learning
+- **Smile**: Statistical machine learning library
+- **Weka**: Data mining and ML algorithms
+
+### AI Integration
+- **OpenAI API**: Natural language insights via GPT-4
+- **LangChain4j**: LLM orchestration for Java
+
+### Data Processing
+- **Apache Kafka**: Event streaming for real-time data
+- **Redis**: Prediction caching
+- **PostgreSQL**: Historical data storage (time-series optimized)
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Data Collection (Weeks 1-2)
+- Integrate with Management Service via Kafka
+- Collect historical match results
+- Build feature dataset (team stats, venue data, etc.)
+- Store in optimized format for ML
+
+### Phase 2: Statistical Models (Weeks 3-4)
+- Implement basic prediction algorithms:
+  - Win probability based on historical head-to-head
+  - Venue-based performance adjustment
+  - Recent form analysis
+- Calculate confidence scores
+- REST API for predictions
+
+### Phase 3: Machine Learning (Weeks 5-8)
+- Feature engineering (normalize, encode categorical)
+- Train models:
+  - Logistic Regression (baseline)
+  - Random Forest (ensemble)
+  - Neural Network (complex patterns)
+- Cross-validation and hyperparameter tuning
+- Model versioning and A/B testing
+
+### Phase 4: OpenAI Integration (Weeks 9-10)
+- Integrate GPT-4 API
+- Prompt engineering for tournament insights
+- Natural language explanations of predictions
+- Caching to manage API costs
+
+### Phase 5: Production Optimization (Weeks 11-12)
+- Redis caching for predictions
+- Async processing via Kafka consumers
+- Model serving optimization
+- Monitoring and alerts
+
+---
+
+## Development
 
 ### Run Locally
 
@@ -35,364 +289,197 @@
 cd tourni-ai
 mvn spring-boot:run
 
-# Service runs on port 8084
+# Service starts on port 8084
+# Register with Eureka at http://tourni-discovery-dev:8761
 ```
 
-### Test Endpoint
+### Dependencies (Current)
 
-```bash
-# Public test endpoint (requires USER or ADMIN role via Gateway)
-curl http://localhost:8080/api/v1/ai/test \
-  -H "Authorization: Bearer <JWT_TOKEN>"
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
 
-# Response
-"Hello World!"
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
 ```
 
-**Direct Access (bypassing Gateway):**
-```bash
-curl http://localhost:8084/api/v1/ai/test
+### Dependencies (Planned)
 
-# Response
-"Hello World!"
+```xml
+<!-- OpenAI Integration -->
+<dependency>
+    <groupId>io.github.sashirestela</groupId>
+    <artifactId>simple-openai</artifactId>
+    <version>3.0.0</version>
+</dependency>
+
+<!-- Statistical ML -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-math3</artifactId>
+    <version>3.6.1</version>
+</dependency>
+
+<!-- Kafka for Event Processing -->
+<dependency>
+    <groupId>org.springframework.kafka</groupId>
+    <artifactId>spring-kafka</artifactId>
+</dependency>
+
+<!-- Redis for Caching -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
 ```
 
 ---
 
-## Architecture
+## Machine Learning Approach
 
-```
-┌────────────────────────────────────────────┐
-│        AI Service (Port 8084)              │
-│                                            │
-│  ┌──────────────────────────────────┐    │
-│  │   TestController                 │    │
-│  │    GET /api/v1/ai/test          │    │
-│  │    → Returns "Hello World!"      │    │
-│  └──────────────────────────────────┘    │
-│                                            │
-│  ┌──────────────────────────────────┐    │
-│  │   Future: ML Models              │    │
-│  │    - Match prediction            │    │
-│  │    - Player analytics            │    │
-│  │    - Tournament forecasting      │    │
-│  └──────────────────────────────────┘    │
-└────────────────────────────────────────────┘
-```
+### Feature Engineering
 
-**Current Implementation:**
+**Input Features**:
+- Team historical win rate
+- Head-to-head record
+- Recent form (last 5 matches)
+- Venue statistics
+- Tournament stage (group/playoff)
+- Toss outcome
+- Day/night match
+- Weather conditions (future)
+
+**Feature Transformation**:
 ```java
-@RestController
-@RequestMapping("/api/v1/ai")
-public class TestController {
-    
-    @GetMapping("/test")
-    public String test() {
-        logger.info("TestController.test() called");
-        return "Hello World!";
+public class FeatureEngineer {
+    public double[] extractFeatures(Match match) {
+        return new double[]{
+            team1WinRate,
+            team2WinRate,
+            headToHeadDiff,
+            team1RecentForm,
+            team2RecentForm,
+            venueAdvantage,
+            isNightMatch ? 1.0 : 0.0
+        };
     }
 }
 ```
 
-**Design Philosophy:**
-- **Microservice Ready**: Independent service, stateless, scalable
-- **Placeholder**: Demonstrates service registration, routing, observability
-- **Future-Proof**: Architecture supports adding ML models without breaking changes
+### Model Training (Planned)
 
----
-
-## API Endpoints
-
-| Method | Endpoint | Description | Auth Required | Roles |
-|--------|----------|-------------|---------------|-------|
-| GET | `/api/v1/ai/test` | Health check / test endpoint | Yes | USER, ADMIN |
-
-### Future Endpoints (Planned)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/api/v1/ai/predict/match` | Predict match outcome | Yes |
-| GET | `/api/v1/ai/analytics/player/{id}` | Player performance analytics | Yes |
-| GET | `/api/v1/ai/forecast/tournament/{id}` | Tournament winner prediction | Yes |
-| POST | `/api/v1/ai/commentary/generate` | AI-generated match commentary | Yes |
-
----
-
-## Technology Stack
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Spring Boot** | 3.2.1 | Application framework |
-| **Spring Web** | 3.2.1 | REST API |
-| **Spring Cloud Eureka Client** | 2023.0.0 | Service discovery |
-| **Spring Cloud Config** | 2023.0.0 | External configuration |
-| **Actuator** | 3.2.1 | Health monitoring |
-| **Micrometer** | - | Metrics & tracing |
-| **Prometheus** | - | Metrics export |
-
-**Future Technologies:**
-- **TensorFlow Serving / ONNX**: ML model serving
-- **Python ML Service**: Separate ML microservice (Python FastAPI)
-- **Redis**: Model prediction caching
-- **Apache Kafka**: Real-time data streaming for live predictions
-
----
-
-## Configuration
-
-### External Configuration (from Config Server)
-
-```yaml
-# Loaded from: https://github.com/raju4789/tourni-config/application.yml (shared)
-
-server:
-  port: 8084
-
-spring:
-  application:
-    name: tourni-ai
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://tourni-discovery-service:8761/eureka/
-```
-
-### Local Bootstrap (application.yml)
-
-```yaml
-server:
-  port: 8084
-
-spring:
-  application:
-    name: tourni-ai
-  config:
-    import: "optional:configserver:http://tourni-config-server:8888"
-```
-
----
-
-## Why This Service Exists (As Placeholder)
-
-**1. Microservices Best Practice:**
-- Demonstrates independent, loosely-coupled services
-- Shows complete service registration, discovery, routing
-- Observability setup (metrics, tracing, logging)
-
-**2. Future Scalability:**
-- AI/ML models can be added without affecting other services
-- Independent scaling based on AI workload (CPU-intensive)
-- GPU support for deep learning models (separate deployment)
-
-**3. Portfolio Value:**
-- Shows understanding of placeholder services
-- Demonstrates clean architecture principles
-- Ready for AI integration when needed
-
----
-
-## Future Implementation Roadmap
-
-### Phase 1: Data Collection (Month 1)
-```
-Goal: Collect historical match data
-- Integrate with Management Service
-- Store match results, player stats
-- Build data pipeline (ETL)
-```
-
-### Phase 2: ML Model Development (Month 2-3)
-```
-Goal: Train prediction models
-- Match outcome prediction (binary classification)
-- Player performance prediction (regression)
-- Tournament winner prediction (multi-class)
-
-Tech Stack:
-- Python (scikit-learn, TensorFlow)
-- Jupyter Notebooks for experimentation
-- MLflow for model tracking
-```
-
-### Phase 3: Model Serving (Month 4)
-```
-Goal: Deploy models in production
-- TensorFlow Serving or ONNX Runtime
-- REST API endpoints for predictions
-- Redis caching for frequent predictions
-- A/B testing framework
-```
-
-### Phase 4: Real-Time Analytics (Month 5-6)
-```
-Goal: Live predictions during matches
-- Apache Kafka for real-time data streaming
-- Streaming ML pipelines (Kafka Streams)
-- WebSocket integration for live updates
-```
-
----
-
-## Planned ML Models
-
-### 1. Match Outcome Prediction
-
-**Input Features:**
-- Team historical win/loss ratio
-- Head-to-head record
-- Current form (last 5 matches)
-- Home/away advantage
-- Toss winner
-- Weather conditions
-- Pitch report
-
-**Output:**
-```json
-{
-  "team1WinProbability": 0.68,
-  "team2WinProbability": 0.32,
-  "predictedWinner": "India",
-  "confidence": 0.85
-}
-```
-
-### 2. Player Performance Analytics
-
-**Input:**
-- Player historical stats
-- Opposition team
-- Match venue
-- Match format (T20/ODI/Test)
-
-**Output:**
-```json
-{
-  "predictedRuns": 45,
-  "predictedStrikeRate": 125.3,
-  "formTrend": "improving",
-  "confidence": 0.72
-}
-```
-
-### 3. Tournament Winner Forecast
-
-**Input:**
-- All team statistics
-- Tournament format
-- Group stage standings
-
-**Output:**
-```json
-{
-  "predictions": [
-    {"team": "India", "winProbability": 0.35},
-    {"team": "Australia", "winProbability": 0.28},
-    {"team": "England", "winProbability": 0.18}
-  ]
+```java
+public class MatchPredictionModel {
+    private RandomForest model;
+    
+    public void train(List<HistoricalMatch> data) {
+        double[][] features = extractFeatures(data);
+        int[] labels = extractLabels(data);  // 1 = team1 win, 0 = team2 win
+        
+        model = RandomForest.fit(features, labels, 
+            ntrees: 100,  // Number of trees
+            maxDepth: 10,  // Tree depth
+            mtry: 3  // Features per split
+        );
+    }
+    
+    public Prediction predict(Match match) {
+        double[] features = extractFeatures(match);
+        int prediction = model.predict(features);
+        double[] probabilities = model.predictProbability(features);
+        
+        return new Prediction(
+            prediction,
+            probabilities[1],  // Probability of team1 win
+            calculateConfidence(probabilities)
+        );
+    }
 }
 ```
 
 ---
 
-## Production Considerations
+## Integration with Management Service
 
-### Current State (Placeholder)
-- **Stateless**: No database, no state
-- **Lightweight**: < 50MB memory footprint
-- **Fast Startup**: < 5 seconds
+### Event-Driven Architecture
 
-### Future State (With ML Models)
-- **CPU/GPU Intensive**: 4-8 CPU cores, optional GPU
-- **Memory**: 2-4GB RAM for model loading
-- **Model Updates**: Blue-green deployments for model updates
-- **Caching**: Redis for prediction caching (90% cache hit rate)
+**Management Service**:
+```java
+@Service
+@Transactional
+public class MatchResultService {
+    @Autowired
+    private KafkaTemplate<String, MatchResultEvent> kafkaTemplate;
+    
+    public void addMatchResult(MatchResult result) {
+        // Save to database
+        repository.save(result);
+        
+        // Publish event for AI Service
+        MatchResultEvent event = new MatchResultEvent(
+            result.getMatchId(),
+            result.getTournamentId(),
+            result.getTeam1Id(),
+            result.getTeam2Id(),
+            result.getWinningTeamId(),
+            result.getTeam1Score(),
+            result.getTeam2Score()
+        );
+        
+        kafkaTemplate.send("match-results", event);
+    }
+}
+```
 
-### Monitoring
-- **Metrics**: `/actuator/prometheus`
-  - Request count
-  - Response time
-  - Model inference time (future)
-  - Prediction accuracy (future)
-- **Health**: `/actuator/health`
-- **Tracing**: OpenTelemetry → Tempo
-- **Logs**: Structured JSON → Loki
-
----
-
-## Interview Highlights
-
-**Architecture:**
-- Why separate AI service? (Independent scaling, GPU support, technology flexibility)
-- Placeholder vs full implementation (MVP approach, iterative development)
-- Microservices best practices (service registration, observability, configuration)
-
-**Machine Learning:**
-- Model serving strategies (TensorFlow Serving, ONNX, REST API)
-- Online vs offline predictions (real-time vs batch)
-- Model versioning and A/B testing
-- Feature engineering for cricket analytics
-
-**Scalability:**
-- How to scale ML inference? (Model caching, GPU acceleration, batch predictions)
-- Handling prediction spikes during live matches (Redis cache, load balancing)
-- Cost optimization (CPU vs GPU instances, serverless ML)
+**AI Service Consumer**:
+```java
+@Service
+public class AIEventConsumer {
+    @KafkaListener(topics = "match-results")
+    public void consumeMatchResult(MatchResultEvent event) {
+        // Update training dataset
+        historicalDataService.addMatch(event);
+        
+        // Retrain model periodically
+        if (shouldRetrain()) {
+            modelService.retrain();
+        }
+        
+        // Invalidate cached predictions for affected teams
+        predictionCache.invalidate(event.getTeam1Id(), event.getTeam2Id());
+    }
+}
+```
 
 ---
 
 ## Future Enhancements
 
-| Feature | Priority | Impact | Effort |
-|---------|----------|--------|--------|
-| Match Outcome Prediction | 🔴 High | 80% user engagement | 30-45 days |
-| Player Performance Analytics | 🔴 High | Competitive advantage | 30-45 days |
-| Data Collection Pipeline | 🔴 High | Foundation for ML | 10-15 days |
-| Tournament Winner Forecast | 🟡 Medium | Viral content potential | 20-30 days |
-| Real-Time Predictions | 🟡 Medium | Live match engagement | 45-60 days |
-| AI-Generated Commentary | 🟢 Low | Entertainment value | 30-45 days |
+- **Model Explainability**: SHAP values to explain predictions
+- **Real-Time Updates**: WebSocket for live prediction updates
+- **Player-Level Analysis**: Individual player statistics and predictions
+- **Video Analysis**: Computer vision for match highlight analysis
+- **Fantasy League**: Optimal team selection recommendations
 
 ---
 
-## 🚀 What's Next?
+## Contributing
 
-### For Developers
-
-```bash
-# Run tests
-mvn test
-
-# Build Docker image
-docker build -t tourni-ai:latest .
-
-# Run with Docker Compose
-cd ../../docker/dev
-docker-compose up tourni-ai
-```
-
-### Key Concepts
-- **Placeholder Service**: Demonstrates microservices architecture without full implementation
-- **Future-Ready**: Architecture supports ML model integration
-- **Stateless**: No database dependency, scales horizontally
-
-### Related Services
-- [Management Service](../tourni-management/README.md) - Data source for ML models
-- [Gateway](../tourni-gateway/README.md) - Request routing
-- [Config Server](../tourni-config-server/README.md) - Configuration source
-- [Discovery Service](../tourni-discovery-service/README.md) - Service registry
-
-### Learning Path
-
-**For ML Integration:**
-1. Learn Python ML libraries (scikit-learn, TensorFlow, PyTorch)
-2. Study cricket analytics datasets (Kaggle, ESPN Cricinfo)
-3. Understand model serving (TensorFlow Serving, ONNX)
-4. Explore MLOps tools (MLflow, Kubeflow, SageMaker)
-
-**For Java Developers:**
-5. Learn inter-service communication (REST, gRPC, Kafka)
-6. Study caching strategies (Redis, Caffeine)
-7. Understand GPU deployment (CUDA, TensorFlow GPU)
+AI Service is actively under development. Contributions welcome:
+- ML model implementations
+- Feature engineering ideas
+- OpenAI prompt templates
+- Statistical analysis algorithms
 
 ---
 
-**[← Back to Main README](../README.md)**
+[← Back to Main Documentation](../README.md)

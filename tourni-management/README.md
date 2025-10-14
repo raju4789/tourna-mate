@@ -1,83 +1,156 @@
-# 🏆 Tournament Management Service
+# Tournament Management Service
 
-> Core business logic for tournament operations, match results, team statistics, and real-time leaderboard calculations using the Observer design pattern.
+> Core business logic for tournament operations using Observer pattern for automated calculations
 
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
+[![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
 
 ---
 
-## What It Does
+## Purpose
 
-Manages the complete tournament lifecycle including tournament creation, match result recording, automatic statistics calculation, and real-time leaderboard updates using the Observer design pattern.
+Handles complete tournament lifecycle including team management, match result recording, and automated statistics calculation. Demonstrates Observer design pattern for domain-driven event handling.
 
-**Key Capabilities:**
-- **Tournament Management**: Create and manage cricket tournaments (IPL, World Cup, etc.)
-- **Match Result Recording**: Record scores, winner, and match details
-- **Automatic Statistics**: Observer pattern triggers real-time stat updates
-- **Leaderboard Calculation**: Net Run Rate (NRR) and points table auto-calculated
-- **Team Management**: Track team statistics (wins, losses, runs, overs)
-- **Complete Audit Trail**: JPA Auditing tracks who/when for all changes
-- **Optimistic Locking**: @Version prevents concurrent update conflicts
+### Core Responsibilities
 
-**Business Impact:**
-- **Real-Time Updates**: Leaderboards update instantly when match results added
-- **Zero Manual Calculation**: Observer pattern automates all stat updates
-- **Audit Compliance**: Every change tracked (who, what, when)
-- **Consistency**: Optimistic locking prevents data corruption
+- **Tournament Management**: CRUD operations for tournaments
+- **Team Management**: Team registration and tournament assignments
+- **Match Results**: Recording scores and outcomes
+- **Automated Calculations**: Observer pattern triggers real-time updates
+  - Points table recalculation (winner gets 2 points)
+  - Net Run Rate (NRR) calculation
+  - Team statistics aggregation
+- **Leaderboard Generation**: Real-time points table sorted by points and NRR
+
+### Business Impact
+
+| Feature | Implementation | Benefit |
+|---------|---------------|---------|
+| **Observer Pattern** | Auto-update on match result | Zero manual calculation, instant updates |
+| **Optimistic Locking** | `@Version` on entities | Prevents concurrent update conflicts |
+| **JPA Auditing** | Auto-tracked changes | Complete audit trail for compliance |
+| **Transactional Consistency** | All updates in single transaction | All succeed or all rollback |
 
 ---
 
-## Quick Start
+## Architecture
 
-### Run Locally
-
-```bash
-cd tourni-management
-mvn spring-boot:run
-
-# Service runs on port 8083
+```
+┌──────────────┐
+│   Client     │
+└──────┬───────┘
+       │
+       │ POST /api/v1/manage/addMatchResult
+       ▼
+┌─────────────────────────────────────────────┐
+│   API Gateway                               │
+│   (Validates JWT, checks ADMIN role)        │
+└──────────────────┬──────────────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────────────────┐
+│   Management Service (Port 8083)                 │
+│                                                  │
+│   @Transactional                                 │
+│   ┌────────────────────────────────────────┐    │
+│   │ 1. Save Match Result                   │    │
+│   │    repository.save(matchResult)        │    │
+│   └────────────────┬───────────────────────┘    │
+│                    │                             │
+│                    │ notify observers            │
+│                    │                             │
+│   ┌────────────────▼──────────┐                 │
+│   │ 2. Observer Pattern        │                 │
+│   │                            │                 │
+│   │  PointsTableObserver:      │                 │
+│   │  • Winner gets 2 points    │                 │
+│   │  • Loser gets 0 points     │                 │
+│   │                            │                 │
+│   │  TeamStatsObserver:        │                 │
+│   │  • Update runs scored      │                 │
+│   │  • Update overs bowled     │                 │
+│   │  • Calculate NRR           │                 │
+│   │  • Win/Loss counters       │                 │
+│   └────────────────────────────┘                 │
+│                    │                             │
+│                    │ all updates in transaction  │
+│                    ▼                             │
+│           ┌─────────────────┐                    │
+│           │ Commit or       │                    │
+│           │ Rollback        │                    │
+│           └─────────────────┘                    │
+└──────────────────────────────────────────────────┘
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │ MySQL Database       │
+        │ management_db        │
+        │                      │
+        │ • tournament         │
+        │ • team               │
+        │ • match_result       │
+        │ • points_table       │
+        │ • team_stats         │
+        └──────────────────────┘
 ```
 
-### Get Points Table (Leaderboard)
+---
+
+## API Endpoints
+
+### 1. Get Points Table (Leaderboard)
+
+**GET** `/api/v1/manage/pointstable/tournament/{tournamentId}`
+
+**Authorization**: USER or ADMIN
 
 ```bash
-# Requires USER or ADMIN role
 curl http://localhost:8080/api/v1/manage/pointstable/tournament/101 \
   -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
-**Response:**
+**Response**:
 ```json
 {
   "status": "SUCCESS",
   "data": {
     "tournamentId": 101,
-    "tournamentName": "Cricket World Cup 2023",
+    "tournamentName": "IPL 2024",
     "pointsTable": [
       {
-        "teamName": "India",
-        "played": 9,
-        "won": 9,
-        "lost": 0,
-        "points": 18,
-        "netRunRate": 2.570
+        "position": 1,
+        "teamName": "Mumbai Indians",
+        "played": 14,
+        "won": 10,
+        "lost": 4,
+        "points": 20,
+        "netRunRate": 1.456
       },
       {
-        "teamName": "Australia",
-        "played": 9,
-        "won": 8,
-        "lost": 1,
-        "points": 16,
-        "netRunRate": 0.970
+        "position": 2,
+        "teamName": "Chennai Super Kings",
+        "played": 14,
+        "won": 9,
+        "lost": 5,
+        "points": 18,
+        "netRunRate": 0.892
       }
     ]
   }
 }
 ```
 
-### Add Match Result (ADMIN Only)
+**Sorting Logic**:
+1. Points (descending)
+2. Net Run Rate (descending)
+3. Team name (ascending)
+
+### 2. Add Match Result
+
+**POST** `/api/v1/manage/addMatchResult`
+
+**Authorization**: ADMIN only
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/manage/addMatchResult \
@@ -87,498 +160,420 @@ curl -X POST http://localhost:8080/api/v1/manage/addMatchResult \
     "tournamentId": 101,
     "team1Id": 1101,
     "team2Id": 1102,
-    "team1Score": 285,
-    "team1Overs": 50,
-    "team2Score": 270,
-    "team2Overs": 50,
+    "team1Score": 195,
+    "team1Overs": 20,
+    "team2Score": 180,
+    "team2Overs": 20,
     "winningTeamId": 1101
   }'
 ```
 
-**What Happens Automatically (Observer Pattern):**
-1. ✅ Match result saved to database
-2. ✅ TeamStatsObserver → Updates team statistics (runs, overs)
-3. ✅ PointsTableObserver → Updates points table (played, won, lost, points, NRR)
-4. ✅ All changes audited (created_by, created_date)
-
----
-
-## Architecture
-
+**Automated Processing** (Observer Pattern):
 ```
-┌────────────────────────────────────────────────┐
-│     TourniManagementController                 │
-│       @RequiresAdmin on write operations       │
-│       @RequiresUser on read operations         │
-└────────────────┬───────────────────────────────┘
-                 │
-                 ↓
-┌────────────────────────────────────────────────┐
-│     TourniManagementService                    │
-│       - addMatchResult()                       │
-│       - getPointsTableByTournamentId()         │
-└────────────────┬───────────────────────────────┘
-                 │
-                 ↓
-┌────────────────────────────────────────────────┐
-│     MatchResultSubject (Observable)            │
-│       - notifyObserversSequentially()          │
-└─────┬──────────────────────────────────────────┘
-      │
-      ├──→ TeamStatsObserver
-      │      - Update runs scored/conceded
-      │      - Update overs played/bowled
-      │
-      └──→ PointsTableObserver
-             - Increment played count
-             - Update won/lost
-             - Calculate Net Run Rate
-             - Calculate points (2 per win)
-
-             ⏱️ < 5ms total overhead
+1. ✅ Match result saved
+2. ✅ PointsTableObserver triggered:
+   - Team 1 (winner) gets +2 points
+   - Team 2 (loser) gets 0 points
+3. ✅ TeamStatsObserver triggered:
+   - Team 1: +195 runs scored, +20 overs faced
+   - Team 2: +180 runs scored, +20 overs faced
+   - NRR recalculated for both teams
+4. ✅ All updates committed in single transaction
 ```
 
-**Observer Pattern Benefits:**
-- **Decoupled**: Easy to add new observers (e.g., NotificationObserver)
-- **Automatic**: Stats update without manual intervention
-- **Consistent**: All updates in single transaction
-- **Extensible**: New statistics can be added without modifying core logic
-
----
-
-## API Endpoints
-
-### Tournament Endpoints
-
-| Method | Endpoint | Description | Auth | Roles |
-|--------|----------|-------------|------|-------|
-| GET | `/api/v1/manage/tournaments` | List all tournaments | Yes | USER, ADMIN |
-| GET | `/api/v1/manage/teams?tournamentId={id}` | Get teams by tournament | Yes | USER, ADMIN |
-| GET | `/api/v1/manage/pointstable/tournament/{id}` | Get leaderboard | Yes | USER, ADMIN |
-| POST | `/api/v1/manage/addMatchResult` | Record match result | Yes | ADMIN |
-
-### Authorization Annotations
-
-```java
-@RequiresUser  // Allows USER or ADMIN roles
-public ResponseEntity<...> getAllTournaments()
-
-@RequiresAdmin  // Allows ADMIN role only
-public ResponseEntity<...> addMatchResult(...)
-```
-
----
-
-## Domain Model
-
-```
-Tournament (1) ───── (N) Team
-    │                    │
-    │                    │
-    │                    │
-    ↓                    ↓
-MatchResult ──────→ TeamStats
-    │                    │
-    │                    │
-    ↓                    ↓
-PointsTable (Leaderboard)
-```
-
-### Key Entities
-
-#### Tournament
-```java
-@Entity
-public class Tournament extends BaseEntity {
-    private Long tournamentId;
-    private String tournamentName;
-    private Integer tournamentYear;
-    private Integer maximumOversPerMatch;  // 20 for T20, 50 for ODI
-    // ... audit fields inherited from BaseEntity
+**Response**:
+```json
+{
+  "status": "SUCCESS",
+  "data": {
+    "matchId": 501,
+    "tournament": "IPL 2024",
+    "winner": "Mumbai Indians",
+    "message": "Points table and statistics updated automatically"
+  }
 }
 ```
 
-#### MatchResult
-```java
-@Entity
-public class MatchResult extends BaseEntity {
-    private Long matchResultId;
-    private Long tournamentId;
-    private Long team1Id;
-    private Long team2Id;
-    private Integer team1Score;
-    private Double team1Overs;
-    private Integer team2Score;
-    private Double team2Overs;
-    private Long winningTeamId;
-    // ... audit fields
-}
+### 3. Get All Tournaments
+
+**GET** `/api/v1/manage/tournaments`
+
+**Authorization**: USER or ADMIN
+
+```bash
+curl http://localhost:8080/api/v1/manage/tournaments \
+  -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
-#### PointsTable
-```java
-@Entity
-public class PointsTable extends BaseEntity {
-    private Long pointsTableId;
-    private Long tournamentId;
-    private Long teamId;
-    private Integer played;
-    private Integer won;
-    private Integer lost;
-    private Integer tied;
-    private Integer noResult;
-    private Integer points;
-    private Double netMatchRate;  // Net Run Rate (NRR)
-    
-    @Version  // Optimistic locking
-    private Long version;
-}
-```
+### 4. Add Tournament
 
----
+**POST** `/api/v1/manage/addTournament`
 
-## Technology Stack
+**Authorization**: ADMIN only
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Spring Boot** | 3.2.1 | Application framework |
-| **Spring Data JPA** | 3.2.1 | Database abstraction |
-| **Hibernate** | 6.4.1 | ORM with optimistic locking |
-| **MySQL** | 8.0 | Tournament data storage |
-| **Observer Pattern** | - | Event-driven stat updates |
-| **ModelMapper** | - | DTO to entity mapping |
-| **OpenAPI 3.0** | 2.3.0 | API documentation |
-| **Lombok** | - | Boilerplate reduction |
-
----
-
-## Configuration
-
-### External Configuration (from Config Server)
-
-```yaml
-# Loaded from: https://github.com/raju4789/tourni-config/tourni-management.yml
-
-spring:
-  datasource:
-    url: jdbc:mysql://mysql:3306/tournament_db
-    username: ${VAULT_DB_USERNAME}
-    password: ${VAULT_DB_PASSWORD}
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      
-  jpa:
-    hibernate:
-      ddl-auto: update              # Creates/updates tables
-    show-sql: false                 # Disable SQL logging in prod
-    auditing:
-      enabled: true                 # Enable JPA auditing
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-```
-
-### Local Bootstrap (application.yml)
-
-```yaml
-server:
-  port: 8083
-
-spring:
-  application:
-    name: tourni-management
-  config:
-    import: "optional:configserver:http://tourni-config-server:8888"
+```bash
+curl -X POST http://localhost:8080/api/v1/manage/addTournament \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tournamentName": "World Cup 2025",
+    "tournamentYear": 2025,
+    "tournamentTypeId": 1,
+    "maximumOversPerMatch": 50,
+    "tournamentDescription": "ICC Cricket World Cup"
+  }'
 ```
 
 ---
 
 ## Observer Pattern Implementation
 
-### How It Works
+### Why Observer Pattern?
 
-**1. Subject (MatchResultSubject.java)**
+**Problem**: Match result update requires cascading updates (points, stats, NRR). Tightly coupled code leads to maintenance nightmare.
+
+**Solution**: Observer pattern decouples match result from dependent calculations.
+
+**Benefits**:
+- **Separation of Concerns**: Match result logic separate from statistics
+- **Extensibility**: Add new observers (notifications, analytics) without changing existing code
+- **Transactional**: All observers execute within single transaction
+- **Testability**: Can test observers independently
+
+### Implementation
+
+**Subject** (`MatchResultSubject`):
 ```java
 @Component
-public class MatchResultSubject {
-    private final List<MatchResultObserver> observers;
+public class MatchResultSubject extends Observable {
     
-    public void notifyObserversSequentially(AddMatchResultRequest request) {
-        for (MatchResultObserver observer : observers) {
-            observer.update(request);  // Calls each observer
-        }
+    public void notifyObservers(MatchResult matchResult) {
+        setChanged();
+        notifyObservers(matchResult);  // Triggers all registered observers
     }
 }
 ```
 
-**2. Observers**
+**Observers**:
 
-**TeamStatsObserver:**
+1. **PointsTableObserver**:
 ```java
 @Component
-public class TeamStatsObserver implements MatchResultObserver {
+public class PointsTableObserver implements Observer {
+    
     @Override
-    public void update(AddMatchResultRequest request) {
-        // Update team1 stats
-        team1Stats.setTotalRunsScored(team1Stats.getTotalRunsScored() + team1Score);
-        team1Stats.setTotalOversPlayed(team1Stats.getTotalOversPlayed() + team1Overs);
+    public void update(Observable o, Object arg) {
+        MatchResult result = (MatchResult) arg;
         
-        // Update team2 stats
-        team2Stats.setTotalRunsScored(team2Stats.getTotalRunsScored() + team2Score);
-        team2Stats.setTotalOversPlayed(team2Stats.getTotalOversPlayed() + team2Overs);
+        // Winner gets 2 points
+        updatePoints(result.getWinningTeamId(), 2, true);
+        
+        // Loser gets 0 points (but record updated)
+        long loserId = result.getTeam1Id().equals(result.getWinningTeamId()) 
+            ? result.getTeam2Id() 
+            : result.getTeam1Id();
+        updatePoints(loserId, 0, false);
     }
 }
 ```
 
-**PointsTableObserver:**
+2. **TeamStatsObserver**:
 ```java
 @Component
-public class PointsTableObserver implements MatchResultObserver {
+public class TeamStatsObserver implements Observer {
+    
     @Override
-    public void update(AddMatchResultRequest request) {
-        // Update winner
-        winnerRow.setPlayed(winnerRow.getPlayed() + 1);
-        winnerRow.setWon(winnerRow.getWon() + 1);
-        winnerRow.setPoints(winnerRow.getPoints() + 2);
+    public void update(Observable o, Object arg) {
+        MatchResult result = (MatchResult) arg;
         
-        // Update loser
-        loserRow.setPlayed(loserRow.getPlayed() + 1);
-        loserRow.setLost(loserRow.getLost() + 1);
-        
-        // Calculate Net Run Rate
-        calculateNetRunRate(winnerRow);
-        calculateNetRunRate(loserRow);
+        // Update runs, overs, calculate NRR
+        updateTeamStats(result.getTeam1Id(), 
+            result.getTeam1Score(), result.getTeam1Overs());
+        updateTeamStats(result.getTeam2Id(), 
+            result.getTeam2Score(), result.getTeam2Overs());
     }
 }
 ```
 
-**3. Service Triggers Observers**
+**Service Integration**:
 ```java
 @Service
+@Transactional
 public class TourniManagementServiceImpl {
-    public void addMatchResult(AddMatchResultRequest request) {
+    
+    @Autowired
+    private MatchResultSubject matchResultSubject;
+    
+    public MatchResult addMatchResult(MatchRequest request) {
         // 1. Save match result
-        matchResultRepository.save(matchResult);
+        MatchResult result = matchResultRepository.save(matchResult);
         
-        // 2. Notify all observers (automatic updates)
-        matchResultSubject.notifyObserversSequentially(request);
+        // 2. Notify observers (all updates in same transaction)
+        matchResultSubject.notifyObservers(result);
+        
+        // 3. Transaction commits (or rolls back if any observer fails)
+        return result;
     }
 }
-```
-
-**Execution Flow:**
-```
-addMatchResult() → Save MatchResult → notifyObservers()
-                                            ↓
-                                    TeamStatsObserver.update()
-                                            ↓
-                                    PointsTableObserver.update()
-                                            ↓
-                                    All updates in single transaction
 ```
 
 ---
 
-## Net Run Rate Calculation
+## Net Run Rate (NRR) Calculation
 
-**Formula:**
+### Formula
+
 ```
 NRR = (Total Runs Scored / Total Overs Faced) - (Total Runs Conceded / Total Overs Bowled)
 ```
 
-**Example:**
+### Example
+
+**Team A**:
+- Match 1: Scored 200 in 20 overs, Conceded 180 in 20 overs
+- Match 2: Scored 180 in 20 overs, Conceded 190 in 20 overs
+
 ```
-India:
-  Runs Scored: 2856 in 450 overs
-  Runs Conceded: 1700 in 430 overs
-  
-NRR = (2856 / 450) - (1700 / 430)
-    = 6.347 - 3.953
-    = 2.394
+Runs Scored = 200 + 180 = 380
+Overs Faced = 20 + 20 = 40
+Run Rate (Scoring) = 380 / 40 = 9.5
+
+Runs Conceded = 180 + 190 = 370
+Overs Bowled = 20 + 20 = 40
+Run Rate (Conceding) = 370 / 40 = 9.25
+
+NRR = 9.5 - 9.25 = +0.25
 ```
 
-**Implementation:** [`NetRunRateCalculator.java`](src/main/java/com/tournament/management/utils/NetRunRateCalculator.java)
+### Implementation
+
+```java
+public class NetRunRateCalculator {
+    
+    public static double calculate(TeamStats stats) {
+        double runRateScoring = (double) stats.getTotalRunsScored() 
+            / stats.getTotalOversFaced();
+        double runRateConceding = (double) stats.getTotalRunsConceded() 
+            / stats.getTotalOversBowled();
+        
+        return runRateScoring - runRateConceding;
+    }
+}
+```
 
 ---
 
-## Sample Data (Development)
+## Database Schema
 
-### Tournaments
+### Tournament
 
-```sql
--- Tournament ID: 101
-Tournament Name: Cricket World Cup 2023
-Year: 2023
-Max Overs: 50 (ODI)
+| Column | Type | Purpose |
+|--------|------|---------|
+| `tournament_id` | BIGINT (PK) | Unique identifier |
+| `tournament_name` | VARCHAR(200) | Tournament name (unique with year) |
+| `tournament_year` | INT | Year (unique with name) |
+| `tournament_type_id` | BIGINT | Tournament format (T20, ODI, Test) |
+| `maximum_overs_per_match` | INT | Match format (20 for T20, 50 for ODI) |
+| `tournament_description` | TEXT | Description |
 
--- Tournament ID: 102
-Tournament Name: IPL 2023
-Year: 2023
-Max Overs: 20 (T20)
+**Unique Constraint**: `(tournament_name, tournament_year)`
+
+### Team
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `team_id` | BIGINT (PK) | Unique identifier |
+| `team_name` | VARCHAR(200) (UNIQUE) | Team name |
+| `team_description` | TEXT | Description |
+
+### Match Result
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `match_result_id` | BIGINT (PK) | Unique identifier |
+| `tournament_id` | BIGINT (FK) | Tournament reference |
+| `team1_id` | BIGINT (FK) | First team |
+| `team2_id` | BIGINT (FK) | Second team |
+| `team1_score` | INT | Team 1 runs |
+| `team1_overs` | DOUBLE | Team 1 overs faced |
+| `team2_score` | INT | Team 2 runs |
+| `team2_overs` | DOUBLE | Team 2 overs faced |
+| `winning_team_id` | BIGINT (FK) | Winner |
+| `version` | BIGINT | Optimistic locking |
+
+### Points Table
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `points_table_id` | BIGINT (PK) | Unique identifier |
+| `tournament_id` | BIGINT (FK) | Tournament reference |
+| `team_id` | BIGINT (FK) | Team reference |
+| `matches_played` | INT | Total matches |
+| `matches_won` | INT | Wins |
+| `matches_lost` | INT | Losses |
+| `points` | INT | Total points (2 per win) |
+
+### Team Stats
+
+| Column | Type | Purpose |
+|--------|------|---------|
+| `team_stats_id` | BIGINT (PK) | Unique identifier |
+| `tournament_id` | BIGINT (FK) | Tournament reference |
+| `team_id` | BIGINT (FK) | Team reference |
+| `total_runs_scored` | INT | Cumulative runs scored |
+| `total_runs_conceded` | INT | Cumulative runs conceded |
+| `total_overs_faced` | DOUBLE | Cumulative overs faced |
+| `total_overs_bowled` | DOUBLE | Cumulative overs bowled |
+
+---
+
+## Concurrency Control
+
+### Optimistic Locking
+
+**Problem**: Two admins record same match result simultaneously
+
+**Solution**: JPA `@Version` annotation
+
+```java
+@Entity
+public class MatchResult extends BaseEntity {
+    @Version
+    @Column(name = "version")
+    private Long version;  // Hibernate manages this
+}
 ```
 
-### Teams
+**How It Works**:
+```
+Time  Admin A                        Admin B
+T1    Read match (version=5)
+T2                                   Read match (version=5)
+T3    Update → version=6 ✅
+T4                                   Update → ERROR!
+                                     OptimisticLockException
+                                     (expected version=6, got version=5)
+```
 
-**World Cup Teams (Country-based):**
-- 1101: India
-- 1102: Australia
-- 1103: England
-- 1104: South Africa
-- 1105: New Zealand
-- 1106: Pakistan
-- 1107: Sri Lanka
-- 1108: Afghanistan
-- 1109: Bangladesh
-- 1110: Netherlands
-
-**IPL Teams (Franchise-based):**
-- 1111: Chennai Super Kings (CSK)
-- 1112: Mumbai Indians (MI)
-- 1113: Royal Challengers Bangalore (RCB)
-- 1114: Kolkata Knight Riders (KKR)
-- 1115: Sunrisers Hyderabad (SRH)
-- 1116: Rajasthan Royals (RR)
-- 1117: Delhi Capitals (DC)
-- 1118: Punjab Kings (PBKS)
-- 1119: Lucknow Super Giants (LSG)
-- 1120: Gujarat Titans (GT)
+**Why Optimistic vs Pessimistic**:
+- ✅ No database locks (better concurrency)
+- ✅ Reads never blocked
+- ✅ Conflicts rare in practice
+- ❌ Requires retry logic in client
 
 ---
 
-## Production Considerations
+## Authorization
 
-### Performance
-- **Observer Pattern Overhead**: < 5ms per match result
-- **Optimistic Locking**: @Version prevents lost updates
-- **Connection Pooling**: HikariCP with 20 connections (configurable)
-- **Indexed Queries**: tournamentId, teamId indexed for fast lookups
-- **Transaction Management**: All updates in single transaction (ACID)
+### Method-Level Security
 
-### Data Integrity
-- **Optimistic Locking**: @Version field prevents concurrent update conflicts
-- **Audit Trail**: Complete who/when tracking via JPA Auditing
-- **Soft Deletes**: is_active flag instead of hard deletes
-- **Foreign Keys**: Referential integrity enforced at database level
+```java
+@RestController
+@RequestMapping("/api/v1/manage")
+public class TourniManagementController {
+    
+    @RequiresUser  // USER or ADMIN can read
+    @GetMapping("/pointstable/tournament/{id}")
+    public ResponseEntity<?> getPointsTable(@PathVariable Long id) {
+        // ...
+    }
+    
+    @RequiresAdmin  // Only ADMIN can write
+    @PostMapping("/addMatchResult")
+    public ResponseEntity<?> addMatchResult(@RequestBody MatchRequest req) {
+        // ...
+    }
+}
+```
 
-### Monitoring
-- **Metrics**: `/actuator/prometheus`
-  - Match result processing time
-  - Leaderboard calculation time
-  - Observer execution time
-- **Health**: `/actuator/health` (checks database connectivity)
-- **Tracing**: OpenTelemetry → Tempo (distributed tracing)
-- **Logs**: Structured JSON → Loki
+**Implementation**:
+```java
+@PreAuthorize("@authorizationService.isAdmin()")
+public @interface RequiresAdmin {}
 
-### Scalability
-- **Current**: Single database instance
-- **Future**: Read replicas for leaderboard queries (95% reads)
-- **Caching**: Redis for hot leaderboards (tournament in progress)
-- **Horizontal Scaling**: Stateless service, scales via replicas
+@PreAuthorize("@authorizationService.isAuthenticated()")
+public @interface RequiresUser {}
+```
+
+**User Context**:
+```java
+// Gateway adds headers
+X-User-Username: admin
+X-User-Roles: ADMIN,USER
+
+// Service extracts via interceptor
+UserContext context = UserContextHolder.getContext();
+String username = context.getUsername();
+List<String> roles = context.getRoles();
+```
 
 ---
 
-## Interview Highlights
+## Development
 
-**Design Patterns:**
-- Why Observer pattern? (Decoupled, extensible, automatic updates)
-- Optimistic vs Pessimistic locking trade-offs (performance vs consistency)
-- How to prevent race conditions? (@Version field, transactions)
-- How to add new statistics without modifying core logic? (New observer)
+### Run Locally
 
-**Scalability:**
-- Current architecture limitations (single database instance)
-- How to scale reads? (Read replicas, Redis caching)
-- How to handle 10,000 match results/hour? (Async processing, Kafka)
-- Database sharding strategy (shard by tournament_id)
+```bash
+cd tourni-management
+mvn spring-boot:run
 
-**Domain Modeling:**
-- Bounded context separation (Management vs Identity)
-- Aggregate roots (Tournament, Team)
-- Event sourcing potential (match history, point-in-time queries)
-- Why separate TeamStats and PointsTable? (Different aggregation levels)
+# Requires MySQL on port 3307
+# Database: management_db_dev
+```
 
-**Performance:**
-- Observer pattern overhead (< 5ms, acceptable trade-off)
-- Net Run Rate calculation complexity (O(1) per match)
-- How to optimize leaderboard queries? (Materialized views, Redis cache)
+### Dependencies
+
+```xml
+<!-- JPA & Database -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+</dependency>
+
+<!-- Security -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+
+<!-- Validation -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+```
+
+---
+
+## Monitoring
+
+### Health Check
+
+```bash
+curl http://localhost:8083/actuator/health
+```
+
+### Key Metrics
+
+- `match_results_added_total`: Total matches recorded
+- `points_table_updates_total`: Observer invocations
+- `nrr_calculations_duration`: NRR calculation time
+- `observer_notification_duration`: Observer pattern overhead
 
 ---
 
 ## Future Enhancements
 
-| Feature | Priority | Business Value | Effort |
-|---------|----------|----------------|--------|
-| Redis Caching (Leaderboards) | 🔴 High | 10x faster response (20ms → 2ms) | 2-3 days |
-| Event-Driven (Kafka) | 🔴 High | Async processing, 5x throughput | 5-7 days |
-| Match Scheduling | 🟡 Medium | Auto-generate fixtures | 3-5 days |
-| Advanced Analytics | 🟡 Medium | Player performance tracking | 5-7 days |
-| Real-Time WebSocket Updates | 🟡 Medium | Live score updates | 7-10 days |
-| Tournament Templates | 🟢 Low | Quick tournament setup | 2-3 days |
-| Historical Comparisons | 🟢 Low | Team performance over years | 3-5 days |
+- **Caching**: Redis cache for leaderboards (95% read operations)
+- **Event-Driven**: Kafka for async observer processing
+- **Match Schedule**: Pre-schedule matches with notifications
+- **Live Scoring**: WebSocket updates for real-time leaderboards
+- **Historical Analysis**: Trend analysis, team performance over time
 
 ---
 
-## 🚀 What's Next?
-
-### Performance Optimization Roadmap
-
-**Phase 1: Caching (Week 1)**
-```
-Redis Cache Layer:
-  - Cache leaderboards (95% hit rate)
-  - Response time: 200ms → 20ms
-  - TTL: 5 minutes (tournament in progress), 1 day (completed)
-```
-
-**Phase 2: Event-Driven (Week 2-3)**
-```
-Kafka Integration:
-  - Async stat calculation via Kafka topics
-  - 5x throughput improvement
-  - Decoupled observers as Kafka consumers
-```
-
-**Phase 3: Database Optimization (Week 4)**
-```
-Read Replicas:
-  - Read-only replicas for leaderboard queries
-  - Materialized views for complex aggregations
-  - Database sharding by tournament_id
-```
-
-### Key Concepts
-- **Observer Pattern**: Automatic leaderboard updates when match results change
-- **Optimistic Locking**: @Version prevents data corruption from concurrent updates
-- **JPA Auditing**: Tracks who created/modified tournament data and when
-- **Net Run Rate**: Cricket-specific metric calculated automatically
-
-### Related Services
-- [Identity Service](../tourni-identity-service/README.md) - User authentication
-- [Gateway](../tourni-gateway/README.md) - Request routing & auth
-- [Config Server](../tourni-config-server/README.md) - Configuration source
-- [Discovery Service](../tourni-discovery-service/README.md) - Service registry
-
-### Development Commands
-
-```bash
-# Run tests
-mvn test
-
-# Build Docker image
-docker build -t tourni-management:latest .
-
-# Run with Docker Compose
-cd ../../docker/dev
-docker-compose up management-service mysql
-
-# Check database
-docker exec -it mysql mysql -u root -p
-mysql> USE tournament_db;
-mysql> SELECT * FROM points_table WHERE tournament_id = 101 ORDER BY points DESC, net_match_rate DESC;
-```
-
----
-
-**[← Back to Main README](../README.md)**
+[← Back to Main Documentation](../README.md)

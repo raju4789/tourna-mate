@@ -1,186 +1,84 @@
-# 🔍 Discovery Service (Eureka)
+# Discovery Service
 
-> Netflix Eureka-based service registry enabling dynamic service discovery and load balancing.
+> Netflix Eureka server for service registration and discovery
 
 [![Spring Cloud Netflix](https://img.shields.io/badge/Spring%20Cloud%20Netflix-2023.0.0-brightgreen.svg)](https://spring.io/projects/spring-cloud-netflix)
-[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
 
 ---
 
-## What It Does
+## Purpose
 
-Provides a service registry where all microservices register themselves and discover other services dynamically, eliminating hardcoded URLs and enabling automatic load balancing.
+Service registry enabling dynamic service discovery and client-side load balancing for all microservices in the TOURNA-MATE platform.
 
-**Key Capabilities:**
-- **Service Registration**: All services register with hostname and port on startup
-- **Health Monitoring**: Periodic heartbeats (30s) to detect unhealthy instances
-- **Service Discovery**: Services query Eureka to find other services dynamically
-- **Load Balancing**: Client-side load balancing via `lb://SERVICE-NAME` URLs
-- **Self-Preservation Mode**: Protects against network partition false positives
-- **Web Dashboard**: Visual monitoring at `http://localhost:8761`
+### Core Responsibilities
 
-**Business Value:**
-- **Zero Configuration**: Services discover each other automatically
-- **Auto-Scaling**: New instances automatically join the pool
-- **Fault Tolerance**: Dead instances removed within 90 seconds
-- **No Hard-Coded URLs**: Services communicate via logical names
-
----
-
-## Quick Start
-
-### Run Locally
-
-```bash
-cd tourni-discovery-service
-mvn spring-boot:run
-
-# Eureka server runs on port 8761 (industry standard)
-```
-
-### Access Dashboard
-
-Open browser: http://localhost:8761
-
-You'll see registered services:
-```
-Application             Status          Availability Zones
-TOURNI-GATEWAY          UP (1)          zone1
-TOURNI-IDENTITY-SERVICE UP (1)          zone1
-TOURNI-MANAGEMENT       UP (1)          zone1
-TOURNI-CONFIG-SERVER    UP (1)          zone1
-```
-
-### Test Service Discovery API
-
-```bash
-# Get all registered services
-curl http://localhost:8761/eureka/apps
-
-# Get specific service instances
-curl http://localhost:8761/eureka/apps/TOURNI-IDENTITY-SERVICE
-
-# Check Eureka health
-curl http://localhost:8761/actuator/health
-```
-
-**Expected Response:**
-```json
-{
-  "status": "UP",
-  "components": {
-    "eureka": {
-      "status": "UP"
-    }
-  }
-}
-```
+- **Service Registration**: Microservices register themselves on startup
+- **Service Discovery**: Services find each other by logical name
+- **Health Monitoring**: Periodic heartbeats detect unhealthy instances
+- **Load Balancing**: Client-side load balancing via registered instances
+- **Self-Preservation Mode**: Protects registry during network partitions
 
 ---
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────┐
-│    Eureka Server (Port 8761)                     │
-│                                                  │
-│    Registry:                                     │
-│    ┌─────────────────────────────────────┐      │
-│    │ TOURNI-GATEWAY → [instance-1]       │      │
-│    │ TOURNI-IDENTITY-SERVICE → [inst-1]  │      │
-│    │ TOURNI-MANAGEMENT → [instance-1]    │      │
-│    │ TOURNI-AI → [instance-1]            │      │
-│    └─────────────────────────────────────┘      │
-│                                                  │
-│    Heartbeat every 30s ❤️                       │
-│    Eviction if 3 missed heartbeats (90s)        │
-└──────────────────────────────────────────────────┘
-         ↑                              ↑
-         │ Register (on startup)        │ Discover (runtime)
-         │                              │
-    ┌─────────┐                   ┌─────────┐
-    │Service  │                   │Gateway  │
-    │Startup  │                   │Routing  │
-    └─────────┘                   └─────────┘
+┌────────────────────────────────────────────┐
+│   Eureka Server (Port 8761)                │
+│                                            │
+│   Service Registry:                        │
+│   ┌────────────────────────────────────┐  │
+│   │ TOURNI-GATEWAY      → 2 instances  │  │
+│   │   - 192.168.1.10:8080 (UP)         │  │
+│   │   - 192.168.1.11:8080 (UP)         │  │
+│   │                                    │  │
+│   │ TOURNI-IDENTITY-SERVICE → 1 inst  │  │
+│   │   - 192.168.1.12:8082 (UP)         │  │
+│   │                                    │  │
+│   │ TOURNI-MANAGEMENT → 1 instance    │  │
+│   │   - 192.168.1.13:8083 (UP)         │  │
+│   └────────────────────────────────────┘  │
+└────────────────────────────────────────────┘
+         ▲              │
+         │ register     │ discover
+         │ heartbeat    │ query
+         │              ▼
+    ┌────────┐      ┌─────────┐
+    │Service │      │Service  │
+    │Instance│      │Client   │
+    └────────┘      └─────────┘
 ```
 
-**How It Works:**
-1. **Service Registration**: Each service registers on startup with name, hostname, port
-2. **Heartbeat**: Services send heartbeat every 30s to prove they're alive
-3. **Discovery**: Gateway/Services fetch registry (cached for 30s)
-4. **Load Balancing**: Multiple instances of same service load-balanced automatically
-5. **Eviction**: Services removed if 3 consecutive heartbeats missed (90s)
+### How It Works
 
-**Why Eureka Over DNS?**
-- **Health Aware**: Only routes to healthy instances
-- **Fast Failover**: 90s vs DNS TTL (minutes to hours)
-- **Metadata**: Services can include tags, versions, availability zones
-- **Client-Side LB**: No external load balancer needed
-
----
-
-## Service Registration Example
-
-### How Services Register
-
-```yaml
-# In service's application.yml (loaded from Config Server)
-spring:
-  application:
-    name: tourni-identity-service  # Service name in registry
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://tourni-discovery-service:8761/eureka/
-  instance:
-    prefer-ip-address: true  # Use IP instead of hostname
-    lease-renewal-interval-in-seconds: 30  # Heartbeat interval
+**Service Registration**:
+```
+1. Service starts up
+2. Reads own hostname, port from configuration
+3. Registers with Eureka Server
+4. Sends heartbeat every 30 seconds
+5. If heartbeat stops → Eureka marks as DOWN after 90 seconds
 ```
 
-No code required - Spring Boot auto-configures everything!
-
-### Load-Balanced Service Calls
-
-```java
-// In Gateway application.yml
-spring:
-  cloud:
-    gateway:
-      routes:
-        - id: identity-service
-          uri: lb://TOURNI-IDENTITY-SERVICE  # lb:// = load-balanced via Eureka
-          predicates:
-            - Path=/api/v1/auth/**
+**Service Discovery**:
 ```
-
-Gateway automatically:
-1. Queries Eureka for `TOURNI-IDENTITY-SERVICE` instances
-2. Round-robin load balances across healthy instances
-3. Retries on another instance if one fails
-
----
-
-## Technology Stack
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Spring Boot** | 3.2.1 | Application framework |
-| **Spring Cloud Netflix Eureka** | 2023.0.0 | Service registry |
-| **Actuator** | 3.2.1 | Health monitoring |
-| **Prometheus** | - | Metrics export |
-| **Micrometer** | - | Observability |
+1. Service needs to call another service
+2. Queries Eureka for service by name: lb://tourni-management
+3. Eureka returns list of healthy instances
+4. Client-side load balancer (Ribbon/LoadBalancer) picks instance
+5. Service makes HTTP call to selected instance
+```
 
 ---
 
 ## Configuration
 
-### application.yml
+### Eureka Server (`application.yml`)
 
 ```yaml
 server:
-  port: 8761  # Standard Eureka port
+  port: 8761
 
 spring:
   application:
@@ -188,20 +86,202 @@ spring:
 
 eureka:
   client:
-    # Eureka server should NOT register itself
-    register-with-eureka: false
-    fetch-registry: false
+    register-with-eureka: false  # Server doesn't register itself
+    fetch-registry: false         # Server doesn't fetch registry
   server:
-    # Disable self-preservation in dev (enable in production)
-    enable-self-preservation: false
+    enable-self-preservation: true  # Protects during network issues
+    eviction-interval-timer-in-ms: 4000  # Check for expiration every 4s
 ```
 
-### Environment Variables
+### Eureka Client (Services)
+
+```yaml
+eureka:
+  client:
+    service-url:
+      defaultZone: http://tourni-discovery-dev:8761/eureka/
+    register-with-eureka: true   # Register this service
+    fetch-registry: true         # Fetch other services
+  instance:
+    prefer-ip-address: true      # Use IP instead of hostname
+    lease-renewal-interval-in-seconds: 30  # Heartbeat every 30s
+    lease-expiration-duration-in-seconds: 90  # Evict after 90s no heartbeat
+```
+
+---
+
+## Dashboard
+
+### Access
 
 ```bash
-# Kubernetes/Docker deployment
-EUREKA_HOST=tourni-discovery-service
-EUREKA_PORT=8761
+# Open in browser
+http://localhost:8761
+
+# Or via Docker network
+http://tourni-discovery-dev:8761
+```
+
+### Dashboard Information
+
+**General Info**:
+- Environment (dev/staging/prod)
+- Number of registered instances
+- Number of available zones
+- Registered replicas
+
+**Instance Registry**:
+- Application names
+- Instance IDs
+- Status (UP, DOWN, STARTING)
+- Zone information
+- Metadata
+
+**Example**:
+```
+Application          AMIs  Availability Zones  Status
+TOURNI-GATEWAY       n/a   (1) (1)             UP (1) - 192.168.1.10:8080
+TOURNI-IDENTITY-SERVICE n/a (1) (1)           UP (1) - 192.168.1.12:8082
+TOURNI-MANAGEMENT    n/a   (1) (1)             UP (1) - 192.168.1.13:8083
+```
+
+---
+
+## Service Discovery in Action
+
+### Gateway Routing Example
+
+**Configuration**:
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: tourni-identity-service
+          uri: lb://tourni-identity-service  # lb:// = load-balanced via Eureka
+          predicates:
+            - Path=/api/v1/auth/**
+```
+
+**Flow**:
+```
+1. Request: GET /api/v1/auth/validateToken
+2. Gateway matches route: tourni-identity-service
+3. Gateway queries Eureka: "Give me instances of tourni-identity-service"
+4. Eureka returns: ["192.168.1.12:8082"]
+5. Gateway forwards to: http://192.168.1.12:8082/api/v1/auth/validateToken
+```
+
+### Load Balancing with Multiple Instances
+
+**Scenario**: 3 Gateway instances running
+
+```
+Eureka Registry:
+- tourni-gateway: 
+  - 192.168.1.10:8080 (UP)
+  - 192.168.1.11:8080 (UP)
+  - 192.168.1.12:8080 (UP)
+
+Request 1 → 192.168.1.10:8080 (Round-robin)
+Request 2 → 192.168.1.11:8080
+Request 3 → 192.168.1.12:8080
+Request 4 → 192.168.1.10:8080 (cycle repeats)
+```
+
+**Load Balancer**: Spring Cloud LoadBalancer (replaces Netflix Ribbon)
+
+---
+
+## Health Monitoring
+
+### Heartbeat Mechanism
+
+**Default Timing**:
+- Services send heartbeat every **30 seconds**
+- Eureka waits **90 seconds** before eviction
+- Allows 3 missed heartbeats before marking DOWN
+
+**Calculation**:
+```
+Eviction Threshold = 90s / 30s = 3 missed heartbeats
+```
+
+### Self-Preservation Mode
+
+**Purpose**: Prevent mass evictions during network partitions
+
+**Trigger**: When < 85% of services sending heartbeats
+
+**Behavior**:
+- Eureka stops evicting instances
+- Assumes network issue, not service failure
+- Displays warning in dashboard: "EMERGENCY! EUREKA MAY BE INCORRECTLY CLAIMING INSTANCES ARE UP WHEN THEY'RE NOT."
+
+**Exit**: When heartbeats resume > 85% threshold
+
+---
+
+## Development
+
+### Run Locally
+
+```bash
+cd tourni-discovery-service
+mvn spring-boot:run
+
+# Server starts on port 8761
+# Dashboard: http://localhost:8761
+```
+
+### Dependencies
+
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+</dependency>
+```
+
+### Enable Eureka Server
+
+```java
+@SpringBootApplication
+@EnableEurekaServer  // Single annotation enables server
+public class TourniDiscoveryService {
+    public static void main(String[] args) {
+        SpringApplication.run(TourniDiscoveryService.class, args);
+    }
+}
+```
+
+---
+
+## Monitoring
+
+### Health Check
+
+```bash
+curl http://localhost:8761/actuator/health
+
+# Response
+{
+  "status": "UP"
+}
+```
+
+### Eureka REST API
+
+```bash
+# Get all registered applications
+curl http://localhost:8761/eureka/apps -H "Accept: application/json" | jq
+
+# Get specific application
+curl http://localhost:8761/eureka/apps/TOURNI-GATEWAY -H "Accept: application/json" | jq
+
+# Get instance info
+curl http://localhost:8761/eureka/apps/TOURNI-GATEWAY/192.168.1.10:8080 \
+  -H "Accept: application/json" | jq
 ```
 
 ---
@@ -209,133 +289,62 @@ EUREKA_PORT=8761
 ## Production Considerations
 
 ### High Availability
-- **Multiple Eureka Instances**: Run 3+ instances in production
-- **Peer Replication**: Eureka instances replicate registry to each other
-- **Client Caching**: Services cache registry for 30s (survives short Eureka outages)
-- **Resilience**: If Eureka down, services use cached registry
 
-**Production Setup:**
+**Problem**: Eureka Server is single point of failure
+
+**Solution**: Run multiple Eureka Server instances
+
 ```yaml
-# Eureka instance 1
+# eureka-server-1
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka2:8761/eureka/,http://eureka3:8761/eureka/
+      defaultZone: http://eureka-server-2:8761/eureka/,http://eureka-server-3:8761/eureka/
 
-# Eureka instance 2
+# eureka-server-2
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka1:8761/eureka/,http://eureka3:8761/eureka/
+      defaultZone: http://eureka-server-1:8761/eureka/,http://eureka-server-3:8761/eureka/
 ```
 
-### Security
-- **Dashboard Access**: Restrict to admins only (Spring Security)
-- **Network Policy**: Eureka accessible only within cluster
-- **No Sensitive Data**: Never put secrets in instance metadata
-- **HTTPS**: Enable SSL in production
+**Result**: Eureka servers replicate registry between themselves
 
-### Performance
-- **Registry Caching**: Clients cache for 30s (reduces Eureka load)
-- **Heartbeat Interval**: 30s default (balance between detection speed and network overhead)
-- **Eviction**: 90s timeout (balance between false positives and detection speed)
-- **Capacity**: Single Eureka handles 10,000+ services
+### DNS-Based Discovery (Alternative)
 
-### Monitoring
-- **Health Check**: `/actuator/health` (checks internal state)
-- **Metrics**: `/actuator/prometheus` (registered instances, heartbeats)
-- **Dashboard**: `/` (visual service status)
-- **Logs**: OpenTelemetry traces to Tempo
+**For Kubernetes**: Use Kubernetes Service Discovery instead of Eureka
+- CoreDNS provides service discovery
+- Kubernetes Services provide load balancing
+- Simpler for cloud-native deployments
 
 ---
 
-## Eureka Dashboard
+## Comparison with Alternatives
 
-### Real-Time Monitoring
+| Feature | Eureka | Consul | Kubernetes DNS |
+|---------|--------|--------|---------------|
+| **Client-side LB** | ✅ Yes | ✅ Yes | ❌ Server-side |
+| **Health Checks** | ✅ Heartbeat | ✅ HTTP/TCP/Script | ✅ Liveness/Readiness |
+| **Dashboard** | ✅ Built-in | ✅ UI | ❌ Use K8s Dashboard |
+| **Spring Integration** | ✅ Native | ⚠️ External | ✅ Spring Cloud K8s |
+| **Self-Preservation** | ✅ Yes | ❌ No | N/A |
+| **Complexity** | Low | Medium | High (requires K8s) |
 
-Access: http://localhost:8761
-
-**Displays:**
-- **Instances Currently Registered**: All active services
-- **General Info**: Uptime, environment, memory
-- **Instance Info**: Each service's hostname, port, status, metadata
-- **DS Replicas**: Peer Eureka servers (in HA setup)
-
-**Service Status:**
-- 🟢 **UP**: Service healthy (heartbeat received < 30s ago)
-- 🔴 **DOWN**: Service unhealthy (heartbeat missed > 90s)
-- 🟡 **STARTING**: Service registered but not ready
-
-### Self-Preservation Mode
-
-**What It Is:**
-When Eureka detects network partition (e.g., 15%+ services stop heartbeating), it assumes the network is faulty, not the services. It stops evicting instances to prevent mass eviction.
-
-**Why It Matters:**
-Prevents false positives during network issues.
-
-**Production Recommendation:**
-- **Enable in production** (default behavior)
-- **Disable in dev/test** (for faster feedback)
-
----
-
-## Interview Highlights
-
-**Architecture:**
-- Why use Eureka over Consul/Zookeeper? (Java ecosystem, Netflix OSS, client-side LB)
-- How does service discovery enable microservices? (Dynamic URLs, auto-scaling)
-- Eureka AP vs Consul CP trade-offs (Availability vs Consistency)
-
-**Scalability:**
-- How many services can Eureka handle? (10,000+ instances per server)
-- Client-side caching strategy (30s cache, reduces Eureka load)
-- Horizontal scaling (peer replication across multiple Eureka instances)
-
-**Fault Tolerance:**
-- What happens if Eureka crashes? (Clients use cached registry)
-- Self-preservation mode explained (prevents mass eviction during network partitions)
-- Heartbeat tuning (30s interval vs 90s eviction timeout)
+**Why Eureka for this project**:
+- Native Spring Cloud integration
+- Simplest for local Docker Compose deployment
+- Demonstrates microservices patterns
+- For production K8s deployment, would use Kubernetes Service Discovery
 
 ---
 
 ## Future Enhancements
 
-| Feature | Priority | Impact | Effort |
-|---------|----------|--------|--------|
-| High Availability (3+ instances) | 🔴 High | Eliminate single point of failure | 1-2 days |
-| Dashboard Authentication | 🔴 High | Secure admin access | 1 day |
-| Service Metadata Tags | 🟡 Medium | Blue-green deployments | 2-3 days |
-| Health Check Customization | 🟡 Medium | Better health detection | 1-2 days |
-| Availability Zones | 🟢 Low | Multi-region support | 3-5 days |
+- **Zone Awareness**: Prefer instances in same availability zone
+- **Metadata-Based Routing**: Route based on custom metadata (version, canary)
+- **Metrics Collection**: Track registry size, heartbeat latency
+- **Integration with Service Mesh**: Istio for advanced traffic management
 
 ---
 
-## 🚀 What's Next?
-
-### Key Concepts
-- **Service Registry**: Central directory of all service instances
-- **Heartbeat Mechanism**: Services prove they're alive every 30 seconds
-- **Load Balancing**: `lb://SERVICE-NAME` automatically balances across instances
-
-### Related Services
-- [Gateway](../tourni-gateway/README.md) - Uses Eureka for routing
-- [Config Server](../tourni-config-server/README.md) - Registers with Eureka
-- [All Microservices](../README.md#microservices) - Register with Eureka
-
-### Development Commands
-
-```bash
-# Check registered services
-curl http://localhost:8761/eureka/apps | jq
-
-# Monitor heartbeats (watch mode)
-watch -n 5 'curl -s http://localhost:8761/eureka/apps | grep status'
-
-# Test service discovery from container
-docker exec -it gateway-container curl http://eureka:8761/eureka/apps/TOURNI-IDENTITY-SERVICE
-```
-
----
-
-**[← Back to Main README](../README.md)**
+[← Back to Main Documentation](../README.md)

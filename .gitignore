@@ -74,3 +74,13 @@ mysql_tournament_data/
 !*-template*
 
 .vscode/
+
+# =============================================================================
+# DOCUMENTATION FILES
+# =============================================================================
+# Ignore all markdown files
+*.md
+
+# But keep all README.md files (in root and subdirectories)
+!README.md
+!**/README.md
