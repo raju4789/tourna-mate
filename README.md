@@ -11,7 +11,7 @@
 
 **Production-grade microservices platform for cricket tournament management**
 
-[Quick Start](#quick-start) • [Architecture](#architecture) • [Documentation](#service-documentation) • [Performance](#performance-metrics)
+[Quick Start](#quick-start) • [Architecture](#architecture) • [Documentation](#service-documentation)
 
 </div>
 
@@ -329,27 +329,9 @@ Comprehensive documentation for each microservice:
 | **tourni-config-server** | 8888 | Centralized configuration | [README](tourni-config-server/README.md) |
 | **tourni-discovery-service** | 8761 | Service registry | [README](tourni-discovery-service/README.md) |
 
-> Each service README includes: architecture decisions, API endpoints, configuration details, and interview talking points.
+> Each service README includes: architecture decisions, API endpoints and configuration details.
 
 ---
-
-## Performance Metrics
-
-### Response Time Improvements
-
-| Operation | Before Optimization | After Optimization | Improvement |
-|-----------|--------------------|--------------------|-------------|
-| Gateway Authorization | 50-100ms (service call) | 1-2ms (local validation) | **98% faster** |
-| Database Queries | 100-200ms (no caching) | 30-50ms (HikariCP) | **70% faster** |
-| API Endpoints | 200-500ms | 30-50ms (p95) | **80% faster** |
-
-### Scalability
-
-| Metric | Traditional Approach | Current Implementation | Improvement |
-|--------|---------------------|------------------------|-------------|
-| Concurrent Requests | ~200 (blocking I/O) | 10,000+ (WebFlux) | **50x capacity** |
-| Docker Image Size | ~400MB (JDK) | ~300MB (JRE) | **25% smaller** |
-| Startup Time | ~90s (sequential) | ~60s (health-checked) | **33% faster** |
 
 ### Resource Utilization
 
