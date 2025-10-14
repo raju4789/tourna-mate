@@ -2,6 +2,9 @@ server:
   port: 8082
 
 spring:
+  application:
+    name: tourni-identity-service
+  
   config:
     import: "optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888"
 

@@ -59,13 +59,6 @@ set +a
 
 export ENVIRONMENT=production
 
-# Confirm production start
-read -p "⚠️  Are you sure you want to start PRODUCTION? (yes/no): " confirm
-if [ "$confirm" != "yes" ]; then
-    echo "❌ Production start cancelled"
-    exit 0
-fi
-
 echo ""
 echo "📦 Starting services with docker-compose.prod.yml..."
 echo ""

@@ -1,9 +1,10 @@
-# application.yml
-
 server:
   port: 8083
 
 spring:
+  application:
+    name: tourni-management
+  
   config:
     import: "optional:configserver:http://${CONFIG_SERVICE_HOST:localhost}:8888"
 
