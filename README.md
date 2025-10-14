@@ -12,7 +12,7 @@
 
 ### *Production-Ready Cloud-Native Architecture Demonstrating Enterprise Patterns*
 
-[Quick Start](#-quick-start) • [Architecture](#-architecture) • [Features](#-key-features) • [Documentation](#-module-documentation) • [Roadmap](#-roadmap)
+[Prerequisites](#-prerequisites) • [Quick Start](#-quick-start-3-environments) • [Architecture](#-architecture) • [Features](#-key-features) • [Documentation](#-module-documentation) • [Roadmap](#-roadmap)
 
 </div>
 
@@ -51,78 +51,6 @@
 • Multi-stage builds<br/>
 • Health checks<br/>
 • Auto-restart policies
-</td>
-</tr>
-</table>
-
----
-
-## 🎯 What Makes This Project Interview-Ready
-
-<table>
-<tr>
-<th>Aspect</th>
-<th>What You'll See</th>
-<th>Why It Matters</th>
-</tr>
-<tr>
-<td><strong>🏛️ System Design</strong></td>
-<td>
-• Clean service boundaries (Identity, Management, AI)<br/>
-• Event-driven patterns (Observer for auto-calculations)<br/>
-• Proper domain modeling (Aggregates, Value Objects)<br/>
-• CQRS-ready architecture
-</td>
-<td>
-Shows ability to design scalable systems, not just code features
-</td>
-</tr>
-<tr>
-<td><strong>🔧 Production Operations</strong></td>
-<td>
-• Full observability: Grafana + Loki + Prometheus + Tempo<br/>
-• Distributed tracing with correlation IDs<br/>
-• Multi-environment support (dev/staging/prod)<br/>
-• Secrets management with Vault
-</td>
-<td>
-Demonstrates understanding of real-world production concerns
-</td>
-</tr>
-<tr>
-<td><strong>⚡ Performance Engineering</strong></td>
-<td>
-• Gateway auth: 1-2ms (vs 50-100ms traditional)<br/>
-• Connection pooling (HikariCP tuning)<br/>
-• Optimistic locking (prevent lost updates)<br/>
-• Non-blocking I/O (Gateway's built-in architecture)
-</td>
-<td>
-Proves awareness of performance bottlenecks and optimization techniques
-</td>
-</tr>
-<tr>
-<td><strong>🛡️ Security First</strong></td>
-<td>
-• Two-layer authorization (Gateway + Service)<br/>
-• JWT with token versioning<br/>
-• BCrypt hashing (strength 12)<br/>
-• Security headers, non-root containers
-</td>
-<td>
-Security isn't an afterthought—it's architected from day one
-</td>
-</tr>
-<tr>
-<td><strong>📚 Documentation Quality</strong></td>
-<td>
-• Comprehensive READMEs per module<br/>
-• Architecture decision records<br/>
-• Interview talking points prepared<br/>
-• Code examples with explanations
-</td>
-<td>
-Communication skills matter—can explain complex systems clearly
 </td>
 </tr>
 </table>
@@ -522,21 +450,197 @@ public abstract class BaseEntity {
 
 ---
 
-## 🚀 Quick Start
+## 📋 Prerequisites
 
-### One-Command Startup
+Before running TOURNA-MATE, ensure you have the following installed:
+
+### Required Software
+
+<table>
+<tr>
+<th>Software</th>
+<th>Minimum Version</th>
+<th>Purpose</th>
+<th>Installation</th>
+</tr>
+<tr>
+<td><strong>Docker</strong></td>
+<td>20.10+</td>
+<td>Container runtime</td>
+<td><a href="https://docs.docker.com/get-docker/">Get Docker</a></td>
+</tr>
+<tr>
+<td><strong>Docker Compose</strong></td>
+<td>2.0+</td>
+<td>Multi-container orchestration</td>
+<td>Included with Docker Desktop</td>
+</tr>
+<tr>
+<td><strong>Java JDK</strong></td>
+<td>17 (LTS)</td>
+<td>Build backend services</td>
+<td><a href="https://adoptium.net/">Eclipse Temurin</a></td>
+</tr>
+<tr>
+<td><strong>Maven</strong></td>
+<td>3.8+</td>
+<td>Java build tool</td>
+<td><a href="https://maven.apache.org/download.cgi">Download Maven</a></td>
+</tr>
+<tr>
+<td><strong>Node.js</strong></td>
+<td>20+</td>
+<td>Build frontend</td>
+<td><a href="https://nodejs.org/">Download Node.js</a></td>
+</tr>
+<tr>
+<td><strong>Git</strong></td>
+<td>2.0+</td>
+<td>Version control</td>
+<td><a href="https://git-scm.com/downloads">Download Git</a></td>
+</tr>
+</table>
+
+### System Requirements
+
+| Resource | Minimum | Recommended | Why |
+|----------|---------|-------------|-----|
+| **RAM** | 8 GB | 16 GB | All services + MySQL + Observability stack |
+| **CPU** | 4 cores | 8 cores | Concurrent service execution |
+| **Disk Space** | 10 GB | 20 GB | Docker images, databases, logs |
+| **OS** | Linux, macOS, Windows with WSL2 | Linux/macOS | Docker performance |
+
+### Verify Installation
 
 ```bash
-# Clone
+# Check Docker
+docker --version
+# Expected: Docker version 20.10.0 or higher
+
+# Check Docker Compose
+docker compose version
+# Expected: Docker Compose version v2.0.0 or higher
+
+# Check Java
+java -version
+# Expected: openjdk version "17.x.x"
+
+# Check Maven
+mvn -version
+# Expected: Apache Maven 3.8.x or higher
+
+# Check Node.js
+node --version
+# Expected: v20.x.x or higher
+
+# Check Git
+git --version
+# Expected: git version 2.x.x or higher
+```
+
+---
+
+## 🚀 Quick Start (3 Environments)
+
+TOURNA-MATE supports **3 isolated environments** that can run simultaneously on different ports:
+
+| Environment | Purpose | Script | Ports Range | When to Use |
+|-------------|---------|--------|-------------|-------------|
+| **Development** | Active development, debugging | `./start-dev.sh` | 8000-8999 | Daily coding, hot reload, verbose logs |
+| **Staging** | Pre-production testing | `./start-staging.sh` | 9000-9999 | QA testing, performance testing |
+| **Production** | Production-like setup | `./start-prod.sh` | 10000-10999 | Final validation before deploy |
+
+### Option 1: Development Environment (Recommended for First Run)
+
+```bash
+# 1. Clone repository
 git clone https://github.com/raju4789/tourna-mate.git
 cd tourna-mate
 
-# Start development environment (everything included)
+# 2. Build all services (one-time, ~5 minutes)
+mvn clean package -DskipTests
+
+# 3. Start development environment
 ./start-dev.sh
 
-# Wait 2-3 minutes for all services to start
-# Access UI at http://localhost:8002
+# 4. Wait for all services to start (2-3 minutes)
+# You'll see: "✅ All services are up and running!"
+
+# 5. Access the application
+# UI: http://localhost:8002
+# Login: admin / admin@4789
 ```
+
+**What Happens:**
+- ✅ Builds Docker images for all 7 services
+- ✅ Starts MySQL database (port 3306)
+- ✅ Starts all microservices (ports 8000-8999)
+- ✅ Starts observability stack (Grafana, Prometheus, Loki, Tempo)
+- ✅ Initializes database with sample data
+
+### Option 2: Staging Environment
+
+```bash
+# Build if not already done
+mvn clean package -DskipTests
+
+# Start staging environment (different ports)
+./start-staging.sh
+
+# Access at:
+# UI: http://localhost:9002
+# Login: admin / admin@4789
+
+# Staging uses:
+# • Moderate logging (INFO level)
+# • Production-like configurations
+# • Schema validation (no auto-update)
+# • MySQL port: 3307
+```
+
+### Option 3: Production Environment
+
+```bash
+# Build if not already done
+mvn clean package -DskipTests
+
+# Start production environment
+./start-prod.sh
+
+# Access at:
+# UI: http://localhost:10002
+# Login: admin / admin@4789
+
+# Production uses:
+# • Minimal logging (WARN/ERROR only)
+# • Strict security headers
+# • No SQL logging
+# • MySQL port: 3308
+```
+
+### Run All 3 Environments Simultaneously
+
+```bash
+# Terminal 1: Development
+./start-dev.sh
+
+# Terminal 2: Staging
+./start-staging.sh
+
+# Terminal 3: Production
+./start-prod.sh
+
+# Now you have:
+# Dev UI:  http://localhost:8002
+# Stage UI: http://localhost:9002
+# Prod UI:  http://localhost:10002
+```
+
+**Why Run Multiple Environments?**
+- ✅ Test environment-specific configurations
+- ✅ Compare behavior across environments
+- ✅ Catch environment-specific bugs early
+- ✅ Demonstrate production-readiness
 
 ### Access Points
 
@@ -585,11 +689,11 @@ cd tourna-mate
 </tr>
 </table>
 
-### First Steps
+### First Steps After Startup
 
 ```bash
-# 1. Login
-Navigate to http://localhost:8002
+# 1. Login to UI
+Navigate to http://localhost:8002 (dev) or 9002 (staging) or 10002 (prod)
 Use: admin / admin@4789 (ADMIN+USER roles) or user / admin@4789 (USER role only)
 
 # 2. Create Tournament
@@ -609,6 +713,128 @@ Watch leaderboard update automatically! 🎉
 # 6. View Observability
 Grafana (http://localhost:3000) → Dashboards → See real-time metrics
 ```
+
+### Stop Environment
+
+```bash
+# Stop development environment
+docker compose -f docker/dev/docker-compose.yml down
+
+# Stop staging environment
+docker compose -f docker/staging/docker-compose.yml down
+
+# Stop production environment
+docker compose -f docker/prod/docker-compose.yml down
+
+# Stop all + remove volumes (clean slate)
+docker compose -f docker/dev/docker-compose.yml down -v
+```
+
+### Troubleshooting
+
+<details>
+<summary><strong>Port Already in Use</strong></summary>
+
+**Error:** `Bind for 0.0.0.0:8080 failed: port is already allocated`
+
+**Solution:**
+```bash
+# Find what's using the port
+lsof -i :8080  # macOS/Linux
+netstat -ano | findstr :8080  # Windows
+
+# Kill the process or stop the service
+kill -9 <PID>
+
+# Or use a different environment (different ports)
+./start-staging.sh  # Uses 9000-9999 ports
+```
+</details>
+
+<details>
+<summary><strong>Out of Memory</strong></summary>
+
+**Error:** `Cannot allocate memory` or services crash
+
+**Solution:**
+```bash
+# Check Docker memory allocation
+docker info | grep Memory
+
+# Increase Docker Desktop memory:
+# Docker Desktop → Settings → Resources → Memory → 8 GB minimum
+
+# Or run fewer services:
+# Comment out AI service in docker-compose.yml (not critical)
+```
+</details>
+
+<details>
+<summary><strong>Services Won't Start</strong></summary>
+
+**Problem:** Services stuck in "starting" state
+
+**Solution:**
+```bash
+# Check logs
+docker compose -f docker/dev/docker-compose.yml logs -f
+
+# Look for specific service
+docker logs tourni-gateway-dev
+
+# Restart specific service
+docker compose -f docker/dev/docker-compose.yml restart tourni-gateway
+
+# Clean rebuild
+docker compose -f docker/dev/docker-compose.yml down
+mvn clean package -DskipTests
+./start-dev.sh
+```
+</details>
+
+<details>
+<summary><strong>Database Connection Failed</strong></summary>
+
+**Error:** `Connection refused` or `Unknown database`
+
+**Solution:**
+```bash
+# Wait longer (MySQL takes 30-60s to initialize first time)
+docker logs mysql-dev
+
+# Check if MySQL is ready
+docker exec -it mysql-dev mysql -u root -proot -e "SHOW DATABASES;"
+
+# Restart just MySQL
+docker compose -f docker/dev/docker-compose.yml restart mysql
+
+# Clean database restart
+docker compose -f docker/dev/docker-compose.yml down mysql -v
+docker compose -f docker/dev/docker-compose.yml up -d mysql
+```
+</details>
+
+<details>
+<summary><strong>Maven Build Failed</strong></summary>
+
+**Error:** Build errors during `mvn clean package`
+
+**Solution:**
+```bash
+# Clean everything
+mvn clean
+
+# Clear Maven cache
+rm -rf ~/.m2/repository
+
+# Build with verbose output
+mvn clean package -DskipTests -X
+
+# Build individual service
+cd tourni-identity-service
+mvn clean package -DskipTests
+```
+</details>
 
 ---
 
